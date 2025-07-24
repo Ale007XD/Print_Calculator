@@ -1,1 +1,231 @@
+:root {
+    --primary-color: #3498db;
+    --secondary-color: #2c3e50;
+    --background-color: #f4f6f8;
+    --surface-color: #ffffff;
+    --text-color: #333;
+    --border-radius: 8px;
+}
 
+body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    margin: 0;
+    background-color: var(--background-color);
+    color: var(--text-color);
+}
+
+#app {
+    max-width: 500px;
+    margin: 0 auto;
+    background-color: var(--surface-color);
+    min-height: 100vh;
+    box-shadow: 0 0 20px rgba(0,0,0,0.1);
+}
+
+.screen {
+    display: none;
+    flex-direction: column;
+    height: 100vh;
+}
+
+.screen.active {
+    display: flex;
+}
+
+header {
+    background-color: var(--primary-color);
+    color: white;
+    padding: 15px;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+header h1, header h2 {
+    margin: 0;
+    text-align: center;
+    flex-grow: 1;
+}
+
+.btn-back {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.2em;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+main {
+    padding: 20px;
+    overflow-y: auto;
+    flex-grow: 1;
+}
+
+/* Главное меню */
+#main-menu main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+.info-block {
+    margin-top: 30px;
+    color: #555;
+    max-width: 80%;
+}
+
+/* Кнопки */
+.btn-main {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 15px 30px;
+    font-size: 1.1em;
+    font-weight: bold;
+    border-radius: var(--border-radius);
+    cursor: pointer;
+    width: 100%;
+    margin-top: 20px;
+    transition: background-color 0.3s;
+}
+
+.btn-main:hover {
+    background-color: #2980b9;
+}
+
+/* Формы */
+.form-group {
+    margin-bottom: 20px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 8px;
+    font-weight: bold;
+    color: #555;
+}
+
+.form-group input[type="number"],
+.form-group select {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid #ddd;
+    border-radius: var(--border-radius);
+    font-size: 1em;
+    box-sizing: border-box;
+}
+
+.dimensions {
+    display: flex;
+    gap: 15px;
+}
+
+.dimensions > div {
+    flex: 1;
+}
+
+.service {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px;
+    background: #f9f9f9;
+    border-radius: var(--border-radius);
+}
+
+.service div {
+    display: flex;
+    flex-direction: column;
+}
+
+.service span {
+    font-size: 0.9em;
+    color: #777;
+}
+
+.service input[type="number"] {
+    width: 80px;
+    text-align: center;
+}
+
+.service input[type="checkbox"] {
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+}
+
+
+/* Смета */
+#estimate-items {
+    margin-bottom: 20px;
+}
+
+.estimate-item {
+    background: #f9f9f9;
+    padding: 15px;
+    border-radius: var(--border-radius);
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.estimate-item .item-details {
+    flex-grow: 1;
+}
+
+.estimate-item .item-name {
+    font-weight: bold;
+}
+
+.estimate-item .item-breakdown {
+    font-size: 0.85em;
+    color: #666;
+    margin-top: 5px;
+}
+
+.estimate-item .item-price {
+    font-weight: bold;
+    font-size: 1.1em;
+}
+
+.item-delete-btn {
+    background: #e74c3c;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 30px;
+    height: 30px;
+    font-size: 1.2em;
+    cursor: pointer;
+    margin-left: 15px;
+}
+
+#estimate-total {
+    padding-top: 15px;
+    border-top: 2px solid #eee;
+}
+
+.total-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    font-size: 1.1em;
+}
+
+.total-row.final-total {
+    font-weight: bold;
+    font-size: 1.3em;
+    color: var(--primary-color);
+}
+
+.discount-row input {
+    width: 60px;
+    text-align: right;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    padding: 5px;
+}
