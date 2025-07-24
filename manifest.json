@@ -1,7 +1,7 @@
 {
     "name": "Калькулятор Печати",
     "short_name": "КалькПечати",
-    "start_url": "/index.html",
+    "start_url": "/Print_Calculator/",
     "display": "standalone",
     "background_color": "#f4f6f8",
     "theme_color": "#3498db",
