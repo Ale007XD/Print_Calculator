@@ -146,11 +146,6 @@ main {
     color: #777;
 }
 
-.service input[type="number"] {
-    width: 80px;
-    text-align: center;
-}
-
 .service input[type="checkbox"] {
     width: 24px;
     height: 24px;
@@ -220,12 +215,4 @@ main {
     font-weight: bold;
     font-size: 1.3em;
     color: var(--primary-color);
-}
-
-.discount-row input {
-    width: 60px;
-    text-align: right;
-    border: 1px solid #ccc;
-    border-radius: 4px;
-    padding: 5px;
 }
