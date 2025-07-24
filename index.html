@@ -2,8 +2,8 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- ВАЖНО: Добавлен тег base. Замените pwa-calculator на имя вашего репозитория -->
-    <base href="/Print_Calculator/">
+    <!-- ВАЖНО: Убедитесь, что здесь указано имя вашего репозитория -->
+    <base href="/pwa-calculator/">
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Калькулятор печати</title>
@@ -70,26 +70,26 @@
 
                     <div class="form-group service">
                        <div>
-                           <label for="eyelets">Люверсы (d 10, 12 мм)</label>
-                           <span>25.00 руб./шт</span>
+                           <label for="eyelets">Добавить люверсы</label>
+                           <span>Авторасчет (через 25 см)</span>
                        </div>
-                       <input type="number" id="eyelets" placeholder="0" min="0">
+                       <input type="checkbox" id="eyelets">
                     </div>
                     
                      <div class="form-group service">
                        <div>
-                           <label for="cutting">Резка в край (по периметру)</label>
-                           <span>10.00 руб./м</span>
+                           <label for="cutting">Резка в край</label>
+                           <span>По периметру</span>
                        </div>
                        <input type="checkbox" id="cutting">
                     </div>
 
                     <div class="form-group service">
                         <div>
-                            <label for="layout">Макет</label>
-                            <span>1000.00 руб./шт</span>
+                            <label for="layout">Разработка макета</label>
+                            <span>Стоимость зависит от площади</span>
                         </div>
-                        <input type="number" id="layout" placeholder="0" min="0">
+                        <input type="checkbox" id="layout">
                      </div>
 
                     <button type="submit" class="btn-main">Добавить в смету</button>
@@ -108,14 +108,6 @@
                     <!-- Сюда будут добавляться позиции -->
                 </div>
                 <div id="estimate-total">
-                    <div class="total-row">
-                        <span>Промежуточный итог:</span>
-                        <span id="subtotal-amount">0.00 руб.</span>
-                    </div>
-                    <div class="total-row discount-row">
-                        <label for="discount">Скидка (%):</label>
-                        <input type="number" id="discount" value="0" min="0" max="100">
-                    </div>
                     <hr>
                     <div class="total-row final-total">
                         <span>Итого:</span>
