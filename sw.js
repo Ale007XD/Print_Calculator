@@ -1,13 +1,16 @@
-const CACHE_NAME = 'print-calculator-v1';
+// ВАЖНО: Версия кэша изменена на v2, чтобы заставить Service Worker обновиться
+const CACHE_NAME = 'print-calculator-v2';
+
+// ВАЖНО: Все пути теперь включают имя репозитория 'pwa-calculator'
 const URLS_TO_CACHE = [
-    '/',
-    '/index.html',
-    '/style.css',
-    '/app.js',
-    '/manifest.json',
-    '/lib/jspdf.umd.min.js',
-    '/icons/icon-192x192.png',
-    '/icons/icon-512x512.png'
+    '/Print_Calculator/',
+    '/Print_Calculator/index.html',
+    '/Print_Calculator/style.css',
+    '/Print_Calculator/app.js',
+    '/Print_Calculator/manifest.json',
+    '/Print_Calculator/lib/jspdf.umd.min.js',
+    '/Print_Calculator/icons/icon-192x192.png',
+    '/Print_Calculator/icons/icon-512x512.png'
 ];
 
 // Установка Service Worker и кэширование всех ресурсов
@@ -29,7 +32,7 @@ self.addEventListener('activate', event => {
             return Promise.all(
                 cacheNames.map(cacheName => {
                     if (cacheWhitelist.indexOf(cacheName) === -1) {
-                        return caches.delete(cacheName);
+                        return caches.delete(cacheName); // Удаляем старые кэши, например 'print-calculator-v1'
                     }
                 })
             );
