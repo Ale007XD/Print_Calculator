@@ -7,7 +7,7 @@ document.addEventListener('DOMContentLoaded', () => {
             { name: "Баннер 520 гр/м2 (Германия)", price: 500 },
         ],
         film: [
-            { name: "Белая/прозрачная пленка", price: 400 }, // Примерная цена
+            { name: "Белая/прозрачная пленка", price: 400 },
             { name: "Транслюцентная пленка", price: 550 },
         ],
         paper: [
@@ -16,49 +16,35 @@ document.addEventListener('DOMContentLoaded', () => {
             { name: "Бумага постерная", price: 320 },
         ],
         services: {
-            eyelets: 25,
-            cutting: 10,
-            layout: 1000,
+            eyelets: 25, // Цена за 1 люверс
+            cutting: 10, // Цена за 1 п.м. резки
+            layout_small: 125, // Цена за м2 макета, если площадь < 10м2
+            layout_large: 80,  // Цена за м2 макета, если площадь >= 10м2
         }
     };
 
     // --- ГЛОБАЛЬНОЕ СОСТОЯНИЕ ---
     let estimate = [];
-    let currentScreen = 'main-menu';
 
     // --- ЭЛЕМЕНТЫ DOM ---
     const screens = document.querySelectorAll('.screen');
-    const mainMenuScreen = document.getElementById('main-menu');
-    const calculatorScreen = document.getElementById('calculator');
-    const estimateScreen = document.getElementById('estimate');
-    
-    // Кнопки навигации
     const newCalcBtn = document.getElementById('new-calculation-btn');
     const backToMenuBtn = document.getElementById('back-to-menu-btn');
     const backToCalcBtn = document.getElementById('back-to-calc-btn');
-
-    // Форма калькулятора
     const calcForm = document.getElementById('calc-form');
     const categorySelect = document.getElementById('material-category');
     const materialSelect = document.getElementById('material-type');
-    
-    // Поля сметы
     const estimateItemsContainer = document.getElementById('estimate-items');
-    const subtotalEl = document.getElementById('subtotal-amount');
-    const discountInput = document.getElementById('discount');
     const totalEl = document.getElementById('total-amount');
     const exportPdfBtn = document.getElementById('export-pdf-btn');
 
     // --- ФУНКЦИИ ---
 
-    // Навигация между экранами
     const navigateTo = (screenId) => {
-        currentScreen = screenId;
         screens.forEach(s => s.classList.remove('active'));
         document.getElementById(screenId).classList.add('active');
     };
 
-    // Обновление списка материалов при смене категории
     const updateMaterialOptions = () => {
         const category = categorySelect.value;
         const materials = priceList[category];
@@ -71,7 +57,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
-    // Обновление и рендеринг сметы
     const renderEstimate = () => {
         estimateItemsContainer.innerHTML = '';
         if (estimate.length === 0) {
@@ -91,24 +76,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 estimateItemsContainer.appendChild(itemEl);
             });
         }
-        updateTotals();
+        updateTotal();
     };
     
-    // Обновление итоговых сумм
-    const updateTotals = () => {
-        const subtotal = estimate.reduce((sum, item) => sum + item.total, 0);
-        const discount = parseFloat(discountInput.value) || 0;
-        const total = subtotal * (1 - discount / 100);
-
-        subtotalEl.textContent = `${subtotal.toFixed(2)} руб.`;
+    const updateTotal = () => {
+        const total = estimate.reduce((sum, item) => sum + item.total, 0);
         totalEl.textContent = `${total.toFixed(2)} руб.`;
     };
     
-    // Обработка отправки формы калькулятора
     const handleFormSubmit = (e) => {
         e.preventDefault();
 
-        // 1. Сбор данных из формы
         const category = categorySelect.value;
         const materialIndex = materialSelect.value;
         const material = priceList[category][materialIndex];
@@ -122,55 +100,56 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 2. Расчет стоимости материала
         const area = width * height;
         const materialCost = area * material.price * quantity;
         
         let breakdownText = `${quantity} шт x (${width}м x ${height}м) = ${(area * quantity).toFixed(2)} м²`;
         let totalCost = materialCost;
-        let mainItemName = material.name;
+        let servicesTexts = [];
         
-        // 3. Расчет доп. услуг
-        // Люверсы
-        const eyeletsCount = parseInt(document.getElementById('eyelets').value) || 0;
-        if (eyeletsCount > 0) {
+        // --- Расчет доп. услуг ---
+
+        // Люверсы (автоматически)
+        if (document.getElementById('eyelets').checked) {
+            const perimeter = (width + height) * 2;
+            const eyeletsCount = Math.ceil(perimeter / 0.25) * quantity;
             const eyeletsCost = eyeletsCount * priceList.services.eyelets;
             totalCost += eyeletsCost;
-            breakdownText += ` + ${eyeletsCount} люверсов`;
+            servicesTexts.push(`${eyeletsCount} люверсов`);
         }
 
         // Резка
-        const cuttingChecked = document.getElementById('cutting').checked;
-        if (cuttingChecked) {
+        if (document.getElementById('cutting').checked) {
             const perimeter = (width + height) * 2;
             const cuttingCost = perimeter * priceList.services.cutting * quantity;
             totalCost += cuttingCost;
-            breakdownText += ` + резка по периметру`;
+            servicesTexts.push(`резка`);
         }
         
-        // Макет
-        const layoutCount = parseInt(document.getElementById('layout').value) || 0;
-        if (layoutCount > 0) {
-            const layoutCost = layoutCount * priceList.services.layout;
+        // Макет (в зависимости от площади)
+        if (document.getElementById('layout').checked) {
+            const layoutPricePerSqm = area < 10 ? priceList.services.layout_small : priceList.services.layout_large;
+            const layoutCost = area * layoutPricePerSqm * quantity;
             totalCost += layoutCost;
-            mainItemName += ` + ${layoutCount} макет(а)`;
+            servicesTexts.push(`макет (${layoutCost.toFixed(2)} руб)`);
         }
 
-        // 4. Добавление в смету
+        if(servicesTexts.length > 0) {
+            breakdownText += ` | Услуги: ${servicesTexts.join(', ')}`;
+        }
+        
         estimate.push({
-            name: mainItemName,
+            name: material.name,
             breakdown: breakdownText,
             total: totalCost
         });
         
-        // 5. Переход на экран сметы
         renderEstimate();
         navigateTo('estimate');
         calcForm.reset();
-        updateMaterialOptions(); // сбросить селект
+        updateMaterialOptions();
     };
 
-    // Удаление элемента из сметы
     const handleDeleteItem = (e) => {
         if (e.target.classList.contains('item-delete-btn')) {
             const index = e.target.dataset.index;
@@ -179,17 +158,20 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // Экспорт в PDF
     const handleExportPdf = () => {
+        if (estimate.length === 0) {
+            alert("Смета пуста. Добавьте хотя бы одну позицию.");
+            return;
+        }
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
         
-        let y = 20; // Начальная позиция по Y
+        let y = 20;
         
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(16);
         doc.text("Смета на печатную продукцию", 105, y, { align: 'center' });
-        y += 20;
+        y += 15;
         
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(10);
@@ -198,34 +180,22 @@ document.addEventListener('DOMContentLoaded', () => {
         
         estimate.forEach(item => {
             doc.setFont('helvetica', 'bold');
-            doc.text(item.name, 15, y);
+            doc.text(item.name, 15, y, { maxWidth: 140 });
             doc.text(`${item.total.toFixed(2)} руб.`, 195, y, { align: 'right'});
             y += 6;
             
             doc.setFont('helvetica', 'italic');
             doc.setFontSize(9);
-            doc.text(item.breakdown, 15, y);
-            y += 10;
+            const splitBreakdown = doc.splitTextToSize(item.breakdown, 180);
+            doc.text(splitBreakdown, 15, y);
+            y += (splitBreakdown.length * 4) + 6; // Динамический отступ в зависимости от кол-ва строк
         });
         
-        y += 5;
-        doc.line(15, y, 195, y); // разделитель
+        doc.line(15, y, 195, y); // Разделитель
         y += 10;
         
-        doc.setFontSize(12);
-        const subtotal = estimate.reduce((sum, item) => sum + item.total, 0);
-        const discountValue = parseFloat(discountInput.value) || 0;
-        const totalValue = subtotal * (1 - discountValue / 100);
+        const totalValue = estimate.reduce((sum, item) => sum + item.total, 0);
 
-        doc.setFont('helvetica', 'normal');
-        doc.text("Промежуточный итог:", 150, y, { align: 'right' });
-        doc.text(`${subtotal.toFixed(2)} руб.`, 195, y, { align: 'right' });
-        y += 7;
-        
-        doc.text(`Скидка (${discountValue}%):`, 150, y, { align: 'right' });
-        doc.text(`-${(subtotal - totalValue).toFixed(2)} руб.`, 195, y, { align: 'right' });
-        y += 10;
-        
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(14);
         doc.text("Итого к оплате:", 150, y, { align: 'right' });
@@ -234,28 +204,23 @@ document.addEventListener('DOMContentLoaded', () => {
         doc.save(`Смета_${new Date().toISOString().slice(0,10)}.pdf`);
     };
 
-
     // --- ПРИВЯЗКА СОБЫТИЙ ---
     newCalcBtn.addEventListener('click', () => navigateTo('calculator'));
     backToMenuBtn.addEventListener('click', () => navigateTo('main-menu'));
     backToCalcBtn.addEventListener('click', () => navigateTo('calculator'));
-    
     categorySelect.addEventListener('change', updateMaterialOptions);
     calcForm.addEventListener('submit', handleFormSubmit);
-
     estimateItemsContainer.addEventListener('click', handleDeleteItem);
-    discountInput.addEventListener('input', updateTotals);
     exportPdfBtn.addEventListener('click', handleExportPdf);
     
     // --- ИНИЦИАЛИЗАЦИЯ ---
     navigateTo('main-menu');
     updateMaterialOptions();
 
-    // Регистрация Service Worker
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('/sw.js')
-                .then(registration => console.log('ServiceWorker registration successful with scope: ', registration.scope))
+            navigator.serviceWorker.register('sw.js')
+                .then(reg => console.log('ServiceWorker registration successful: ', reg))
                 .catch(err => console.log('ServiceWorker registration failed: ', err));
         });
     }
