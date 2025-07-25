@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // --- ДАННЫЕ (ПРАЙС-ЛИСТ) ---
+    // Весь ваш код до функции handleExportPdf остается без изменений...
     const priceList = {
         banner: [
             { name: "Баннер 300-340 гр/м2 (Китай)", price: 250 },
-            { name: "Баннер 440 гр/м2 (Китай)", price: 350 },
+            { name: "Баннер 440 гр/м2 (Китай)", price: 360 },
             { name: "Баннер 520 гр/м2 (Германия)", price: 500 },
         ],
         film: [
@@ -16,17 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
             { name: "Бумага постерная", price: 320 },
         ],
         services: {
-            eyelets: 22, // Цена за 1 люверс
-            cutting: 10, // Цена за 1 п.м. резки
-            layout_small: 150, // Цена за м2 макета, если площадь < 10м2
-            layout_large: 80,  // Цена за м2 макета, если площадь >= 10м2
+            eyelets: 20, // цена за люверс
+            cutting: 10, // цена за рез в край
+            layout_small: 150, // цена 1 м2 макета меньше 10 м2
+            layout_large: 80, // цена 1 м2 макета больше 10 м2
         }
     };
-
-    // --- ГЛОБАЛЬНОЕ СОСТОЯНИЕ ---
     let estimate = [];
-
-    // --- ЭЛЕМЕНТЫ DOM ---
     const screens = document.querySelectorAll('.screen');
     const newCalcBtn = document.getElementById('new-calculation-btn');
     const backToMenuBtn = document.getElementById('back-to-menu-btn');
@@ -37,8 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const estimateItemsContainer = document.getElementById('estimate-items');
     const totalEl = document.getElementById('total-amount');
     const exportPdfBtn = document.getElementById('export-pdf-btn');
-
-    // --- ФУНКЦИИ ---
 
     const navigateTo = (screenId) => {
         screens.forEach(s => s.classList.remove('active'));
@@ -57,7 +51,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
-    // Функция для рендеринга сметы в HTML
     const renderEstimate = () => {
         estimateItemsContainer.innerHTML = '';
         if (estimate.length === 0) {
@@ -85,11 +78,8 @@ document.addEventListener('DOMContentLoaded', () => {
         totalEl.textContent = `${total.toFixed(2)} руб.`;
     };
     
-    // --- ИЗМЕНЕННАЯ ФУНКЦИЯ: СОХРАНЯЕМ ДЕТАЛИ ДЛЯ PDF ---
     const handleFormSubmit = (e) => {
         e.preventDefault();
-
-        // 1. Сбор и проверка данных
         const material = priceList[categorySelect.value][materialSelect.value];
         const width = parseFloat(document.getElementById('width').value) || 0;
         const height = parseFloat(document.getElementById('height').value) || 0;
@@ -103,7 +93,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const area = width * height;
         let totalCost = area * material.price * quantity;
         
-        // 2. Создание детализированного объекта для услуг
         const services = {
             eyelets: { enabled: false, count: 0, cost: 0 },
             cutting: { enabled: false, cost: 0 },
@@ -132,7 +121,6 @@ document.addEventListener('DOMContentLoaded', () => {
             totalCost += layoutCost;
         }
 
-        // 3. Создание текстового описания для HTML
         let htmlServicesTexts = [];
         if (services.eyelets.enabled) htmlServicesTexts.push(`${services.eyelets.count} люверсов`);
         if (services.cutting.enabled) htmlServicesTexts.push(`резка`);
@@ -142,13 +130,12 @@ document.addEventListener('DOMContentLoaded', () => {
             htmlBreakdown += ` | Услуги: ${htmlServicesTexts.join(', ')}`;
         }
         
-        // 4. Добавление полного объекта в смету
         estimate.push({
             name: material.name,
             width, height, quantity, area,
             total: totalCost,
-            services: services, // Сохраняем все детали услуг
-            htmlBreakdown: htmlBreakdown // Сохраняем строку только для HTML
+            services: services,
+            htmlBreakdown: htmlBreakdown
         });
         
         renderEstimate();
@@ -165,7 +152,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // --- ПОЛНОСТЬЮ ПЕРЕПИСАННАЯ ФУНКЦИЯ ВЫВОДА В PDF ---
+    // --- НОВАЯ, ПРОСТАЯ И НАДЕЖНАЯ ФУНКЦИЯ СОЗДАНИЯ PDF ---
     const handleExportPdf = () => {
         if (estimate.length === 0) {
             alert("Смета пуста. Добавьте хотя бы одну позицию.");
@@ -173,79 +160,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
+        const pdfTemplate = document.getElementById('pdf-template');
         
-        let y = 20;
-        
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(16);
-        doc.text("Смета на печатную продукцию", 105, y, { align: 'center' });
-        y += 15;
-        
-        doc.setFont('helvetica', 'normal');
-        doc.setFontSize(10);
-        doc.text(`Дата: ${new Date().toLocaleDateString('ru-RU')}`, 15, y);
-        y += 10;
-        
+        // 1. Генерируем HTML-содержимое для нашей сметы
+        let content = `<h1>Смета на печатную продукцию</h1>`;
+        content += `<div class="date">Дата: ${new Date().toLocaleDateString('ru-RU')}</div>`;
+
         estimate.forEach(item => {
-            if (y > 250) { // Перенос на новую страницу
-                doc.addPage();
-                y = 20;
-            }
-        
-            // Название материала и итоговая цена за позицию
-            doc.setFont('helvetica', 'bold');
-            doc.setFontSize(12);
-            doc.text(item.name, 15, y);
-            doc.text(`${item.total.toFixed(2)} руб.`, 195, y, { align: 'right'});
-            y += 7;
+            content += `<div class="item">`;
+            content += `<div class="item-header"><span>${item.name}</span><span>${item.total.toFixed(2)} руб.</span></div>`;
+            content += `<div class="item-details">Параметры: ${item.quantity} шт x (${item.width.toFixed(2)}м x ${item.height.toFixed(2)}м), S=${(item.area * item.quantity).toFixed(2)} м²</div>`;
             
-            // Основные параметры
-            doc.setFont('helvetica', 'normal');
-            doc.setFontSize(10);
-            doc.text(`- Параметры: ${item.quantity} шт x (${item.width.toFixed(2)}м x ${item.height.toFixed(2)}м), S=${(item.area * item.quantity).toFixed(2)} м²`, 20, y);
-            y += 6;
-
-            // Детализация по услугам
-            const hasServices = item.services.eyelets.enabled || item.services.cutting.enabled || item.services.layout.enabled;
-            if (hasServices) {
-                doc.setFont('helvetica', 'bold');
-                doc.text('Дополнительные услуги:', 20, y);
-                y += 6;
-                doc.setFont('helvetica', 'normal');
-
-                if (item.services.eyelets.enabled) {
-                    doc.text(`- Люверсы (${item.services.eyelets.count} шт.):`, 25, y);
-                    doc.text(`${item.services.eyelets.cost.toFixed(2)} руб.`, 195, y, { align: 'right'});
-                    y += 5;
-                }
-                if (item.services.cutting.enabled) {
-                    doc.text(`- Резка в край:`, 25, y);
-                    doc.text(`${item.services.cutting.cost.toFixed(2)} руб.`, 195, y, { align: 'right'});
-                    y += 5;
-                }
-                if (item.services.layout.enabled) {
-                    doc.text(`- Разработка макета:`, 25, y);
-                    doc.text(`${item.services.layout.cost.toFixed(2)} руб.`, 195, y, { align: 'right'});
-                    y += 5;
-                }
+            if (item.services.eyelets.enabled || item.services.cutting.enabled || item.services.layout.enabled) {
+                let servicesHtml = '<div class="service-details">Доп. услуги: ';
+                const servicesList = [];
+                if (item.services.eyelets.enabled) servicesList.push(`Люверсы (${item.services.eyelets.count} шт)`);
+                if (item.services.cutting.enabled) servicesList.push('Резка в край');
+                if (item.services.layout.enabled) servicesList.push('Разработка макета');
+                servicesHtml += servicesList.join(', ');
+                servicesHtml += '</div>';
+                content += servicesHtml;
             }
-            y += 5; // Отступ после позиции
+            content += `</div>`;
         });
-        
-        doc.line(15, y, 195, y);
-        y += 10;
-        
+
         const totalValue = estimate.reduce((sum, item) => sum + item.total, 0);
+        content += `<div class="total">Итого к оплате: ${totalValue.toFixed(2)} руб.</div>`;
 
-        doc.setFont('helvetica', 'bold');
-        doc.setFontSize(14);
-        doc.text("Итого к оплате:", 150, y, { align: 'right' });
-        doc.text(`${totalValue.toFixed(2)} руб.`, 195, y, { align: 'right' });
-
-        doc.save(`Смета_${new Date().toISOString().slice(0,10)}.pdf`);
+        // 2. Помещаем сгенерированный HTML в наш невидимый шаблон
+        pdfTemplate.innerHTML = content;
+        
+        // 3. Вызываем команду для конвертации HTML в PDF
+        doc.html(pdfTemplate, {
+            callback: function(doc) {
+                doc.save(`Смета_${new Date().toISOString().slice(0,10)}.pdf`);
+            },
+            x: 0,
+            y: 0,
+            width: 210, // ширина листа A4 в мм
+            windowWidth: 1000 // ширина окна для рендеринга
+        });
     };
 
-    // --- ПРИВЯЗКА СОБЫТИЙ ---
+    // --- Привязка событий ---
     newCalcBtn.addEventListener('click', () => navigateTo('calculator'));
     backToMenuBtn.addEventListener('click', () => navigateTo('main-menu'));
     backToCalcBtn.addEventListener('click', () => navigateTo('calculator'));
@@ -254,7 +211,7 @@ document.addEventListener('DOMContentLoaded', () => {
     estimateItemsContainer.addEventListener('click', handleDeleteItem);
     exportPdfBtn.addEventListener('click', handleExportPdf);
     
-    // --- ИНИЦИАЛИЗАЦИЯ ---
+    // --- Инициализация ---
     navigateTo('main-menu');
     updateMaterialOptions();
 
