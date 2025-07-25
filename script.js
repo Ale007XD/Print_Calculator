@@ -50,6 +50,15 @@ document.addEventListener('DOMContentLoaded', () => {
         calcItems.forEach(item => {
             const data = parseItemData(item);
             
+            // ИЗМЕНЕНО: Пропускаем баннеры с нулевыми размерами в общем расчете
+            if (data.width === 0 || data.height === 0) {
+                // Обнуляем его личный итог на экране, если он был посчитан ранее
+                item.querySelector('.area-output').textContent = '0.00';
+                item.querySelector('.layout-cost-output').textContent = '0.00';
+                item.querySelector('.item-total-output').textContent = '0.00 руб.';
+                return; // Переходим к следующему элементу, не добавляя его в grandTotal
+            }
+            
             const materialCost = data.area * data.materialPrice;
             const cuttingCost = data.perimeter * PRICES.edge_cutting;
             
@@ -110,10 +119,18 @@ document.addEventListener('DOMContentLoaded', () => {
     async function generatePdf() {
         let reportHtml = `<h1>Расчет стоимости печати</h1>`;
         const calcItems = container.querySelectorAll('.calc-item:not(#item-template)');
+        let hasItemsToPrint = false; // Флаг, что есть хотя бы один баннер для печати
         
         calcItems.forEach(item => {
             const data = parseItemData(item);
             
+            // ИЗМЕНЕНО: Не добавляем в PDF баннеры с нулевыми размерами
+            if (data.width === 0 || data.height === 0) {
+                return; // Пропускаем этот баннер
+            }
+            
+            hasItemsToPrint = true; // Нашли хотя бы один валидный баннер
+
             let layoutCost = 0;
             let layoutText = "Предоставлен свой макет";
             if (data.layoutNeeded === 'no') {
@@ -141,13 +158,22 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
         });
         
+        // Если нечего печатать, выходим
+        if (!hasItemsToPrint) {
+            alert("Нечего выгружать. Добавьте размеры хотя бы для одного баннера.");
+            return;
+        }
+
         const grandTotal = grandTotalElement.textContent;
         reportHtml += `<div class="pdf-total"><p>Общий итог: ${grandTotal}</p></div>`;
         
         pdfContent.innerHTML = reportHtml;
 
         const canvas = await html2canvas(pdfContent, { scale: 2 });
-        const imgData = canvas.toDataURL('image/png');
+        
+        // ИЗМЕНЕНО: Конвертируем в JPEG с качеством 75% для уменьшения размера файла
+        const imgData = canvas.toDataURL('image/jpeg', 0.75);
+
         const { jsPDF } = window.jspdf;
         const pdf = new jsPDF({ orientation: 'p', unit: 'mm', format: 'a4' });
         
@@ -162,7 +188,8 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const x = (pdfWidth - finalImgWidth) / 2;
         
-        pdf.addImage(imgData, 'PNG', x, 10, finalImgWidth, finalImgHeight);
+        // ИЗМЕНЕНО: Добавляем изображение в формате JPEG
+        pdf.addImage(imgData, 'JPEG', x, 10, finalImgWidth, finalImgHeight);
         pdf.save('расчет_печати.pdf');
         pdfContent.innerHTML = '';
     }
