@@ -216,3 +216,42 @@ main {
     font-size: 1.3em;
     color: var(--primary-color);
 }
+
+/* Откройте style.css и добавьте этот код в самый конец */
+
+/* Стили для PDF-шаблона */
+#pdf-template {
+    padding: 20px;
+    box-sizing: border-box;
+}
+#pdf-template h1 {
+    text-align: center;
+    font-size: 18px;
+    margin-bottom: 20px;
+}
+#pdf-template .date {
+    font-size: 12px;
+    margin-bottom: 15px;
+}
+#pdf-template .item {
+    margin-bottom: 15px;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+}
+#pdf-template .item-header {
+    display: flex;
+    justify-content: space-between;
+    font-weight: bold;
+    font-size: 14px;
+}
+#pdf-template .item-details, #pdf-template .service-details {
+    font-size: 12px;
+    color: #333;
+    padding-left: 10px;
+}
+#pdf-template .total {
+    text-align: right;
+    margin-top: 20px;
+    font-size: 16px;
+    font-weight: bold;
+}
