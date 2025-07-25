@@ -1,15 +1,12 @@
-const CACHE_NAME = 'print-calculator-v5'; // Увеличьте номер версии
+const CACHE_NAME = 'print-calculator-v8'; // ВАЖНО: Смените номер версии
 
-// ВАЖНО: Все пути теперь включают имя репозитория 'pwa-calculator'
 const URLS_TO_CACHE = [
     '/Print_Calculator/',
     '/Print_Calculator/index.html',
     '/Print_Calculator/style.css',
     '/Print_Calculator/app.js',
     '/Print_Calculator/manifest.json',
-    '/Print_Calculator/lib/jspdf.umd.min.js',
-    '/Print_Calculator/icons/icon-192x192.png',
-    '/Print_Calculator/icons/icon-512x512.png'
+    '/Print_Calculator/lib/jspdf.umd.min.js'
 ];
 
 // Установка Service Worker и кэширование всех ресурсов
