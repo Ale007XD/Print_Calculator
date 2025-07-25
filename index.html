@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Калькулятор печати</title>
-    <!-- ИЗМЕНЕНО: Подключаем Google Font для красивого отчета -->
+    <!-- Подключаем Google Font для красивого отчета -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
@@ -40,11 +40,28 @@
                 <div class="form-group">
                     <label>Материал:</label>
                     <select class="material-select">
-                        <option value="250">Баннерная ткань 300-340 гр/м² (Китай)</option>
-                        <option value="350" selected>Баннерная ткань 440 гр/м² (Китай)</option>
+                        <option value="250" selected>Баннерная ткань 300-340 гр/м² (Китай)</option>
+                        <option value="350">Баннерная ткань 440 гр/м² (Китай)</option>
                         <option value="500">Баннерная ткань 520 гр/м² (Германия)</option>
                     </select>
                 </div>
+
+                <!-- Новый блок выбора макета -->
+                <div class="form-group">
+                    <label>Макет:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="layout-yes-1" name="layout-choice-1" class="layout-radio" value="yes" checked>
+                        <label for="layout-yes-1">Есть свой макет</label>
+                    </div>
+                    <div class="radio-group">
+                        <input type="radio" id="layout-no-1" name="layout-choice-1" class="layout-radio" value="no">
+                        <label for="layout-no-1">Нужен макет (рассчитать)</label>
+                    </div>
+                    <p class="layout-info">
+                        Вы можете заказать готовый к печати макет <b>ТЕКСТОВОГО БАННЕРА</b> в нашем боте в Телеграм <a href="https://t.me/BannerPrintBot" target="_blank">@BannerPrintBot</a> по цене 299,00 рублей.
+                    </p>
+                </div>
+
                 <div class="form-group">
                     <label>Люверсы:</label>
                     <div class="radio-group">
@@ -67,10 +84,10 @@
                 </div>
             </div>
         </div>
-        <button id="add-item-btn">+ Добавить еще баннер</button>
     </main>
 
     <footer>
+        <button id="add-item-btn">+ Добавить еще баннер</button>
         <div class="total-section">
             <h2>Общий итог</h2>
             <p id="grand-total">0.00 руб.</p>
@@ -78,13 +95,12 @@
         </div>
     </footer>
     
-    <!-- ИЗМЕНЕНО: Скрытый контейнер для генерации PDF -->
+    <!-- Скрытый контейнер для генерации PDF -->
     <div id="pdf-content"></div>
 
     <!-- Подключение библиотек -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <!-- НЕ НУЖЕН ФАЙЛ ШРИФТА -->
     <script src="script.js"></script>
 
 </body>
