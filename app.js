@@ -16,9 +16,9 @@ document.addEventListener('DOMContentLoaded', () => {
             { name: "Бумага постерная", price: 320 },
         ],
         services: {
-            eyelets: 25, // Цена за 1 люверс
+            eyelets: 22, // Цена за 1 люверс
             cutting: 10, // Цена за 1 п.м. резки
-            layout_small: 125, // Цена за м2 макета, если площадь < 10м2
+            layout_small: 150, // Цена за м2 макета, если площадь < 10м2
             layout_large: 80,  // Цена за м2 макета, если площадь >= 10м2
         }
     };
@@ -57,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     };
     
+    // Функция для рендеринга сметы в HTML
     const renderEstimate = () => {
         estimateItemsContainer.innerHTML = '';
         if (estimate.length === 0) {
@@ -68,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemEl.innerHTML = `
                     <div class="item-details">
                         <div class="item-name">${item.name}</div>
-                        <div class="item-breakdown">${item.breakdown}</div>
+                        <div class="item-breakdown">${item.htmlBreakdown}</div>
                     </div>
                     <div class="item-price">${item.total.toFixed(2)}</div>
                     <button class="item-delete-btn" data-index="${index}">×</button>
@@ -84,13 +85,12 @@ document.addEventListener('DOMContentLoaded', () => {
         totalEl.textContent = `${total.toFixed(2)} руб.`;
     };
     
+    // --- ИЗМЕНЕННАЯ ФУНКЦИЯ: СОХРАНЯЕМ ДЕТАЛИ ДЛЯ PDF ---
     const handleFormSubmit = (e) => {
         e.preventDefault();
 
-        const category = categorySelect.value;
-        const materialIndex = materialSelect.value;
-        const material = priceList[category][materialIndex];
-        
+        // 1. Сбор и проверка данных
+        const material = priceList[categorySelect.value][materialSelect.value];
         const width = parseFloat(document.getElementById('width').value) || 0;
         const height = parseFloat(document.getElementById('height').value) || 0;
         const quantity = parseInt(document.getElementById('quantity').value) || 1;
@@ -101,47 +101,54 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         const area = width * height;
-        const materialCost = area * material.price * quantity;
+        let totalCost = area * material.price * quantity;
         
-        let breakdownText = `${quantity} шт x (${width}м x ${height}м) = ${(area * quantity).toFixed(2)} м²`;
-        let totalCost = materialCost;
-        let servicesTexts = [];
-        
-        // --- Расчет доп. услуг ---
+        // 2. Создание детализированного объекта для услуг
+        const services = {
+            eyelets: { enabled: false, count: 0, cost: 0 },
+            cutting: { enabled: false, cost: 0 },
+            layout: { enabled: false, cost: 0 },
+        };
 
-        // Люверсы (автоматически)
         if (document.getElementById('eyelets').checked) {
             const perimeter = (width + height) * 2;
             const eyeletsCount = Math.ceil(perimeter / 0.25) * quantity;
             const eyeletsCost = eyeletsCount * priceList.services.eyelets;
+            services.eyelets = { enabled: true, count: eyeletsCount, cost: eyeletsCost };
             totalCost += eyeletsCost;
-            servicesTexts.push(`${eyeletsCount} люверсов`);
         }
 
-        // Резка
         if (document.getElementById('cutting').checked) {
             const perimeter = (width + height) * 2;
             const cuttingCost = perimeter * priceList.services.cutting * quantity;
+            services.cutting = { enabled: true, cost: cuttingCost };
             totalCost += cuttingCost;
-            servicesTexts.push(`резка`);
         }
         
-        // Макет (в зависимости от площади)
         if (document.getElementById('layout').checked) {
             const layoutPricePerSqm = area < 10 ? priceList.services.layout_small : priceList.services.layout_large;
             const layoutCost = area * layoutPricePerSqm * quantity;
+            services.layout = { enabled: true, cost: layoutCost };
             totalCost += layoutCost;
-            servicesTexts.push(`макет (${layoutCost.toFixed(2)} руб)`);
         }
 
-        if(servicesTexts.length > 0) {
-            breakdownText += ` | Услуги: ${servicesTexts.join(', ')}`;
+        // 3. Создание текстового описания для HTML
+        let htmlServicesTexts = [];
+        if (services.eyelets.enabled) htmlServicesTexts.push(`${services.eyelets.count} люверсов`);
+        if (services.cutting.enabled) htmlServicesTexts.push(`резка`);
+        if (services.layout.enabled) htmlServicesTexts.push(`макет`);
+        let htmlBreakdown = `${quantity} шт x (${width}м x ${height}м) = ${(area * quantity).toFixed(2)} м²`;
+        if (htmlServicesTexts.length > 0) {
+            htmlBreakdown += ` | Услуги: ${htmlServicesTexts.join(', ')}`;
         }
         
+        // 4. Добавление полного объекта в смету
         estimate.push({
             name: material.name,
-            breakdown: breakdownText,
-            total: totalCost
+            width, height, quantity, area,
+            total: totalCost,
+            services: services, // Сохраняем все детали услуг
+            htmlBreakdown: htmlBreakdown // Сохраняем строку только для HTML
         });
         
         renderEstimate();
@@ -158,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
+    // --- ПОЛНОСТЬЮ ПЕРЕПИСАННАЯ ФУНКЦИЯ ВЫВОДА В PDF ---
     const handleExportPdf = () => {
         if (estimate.length === 0) {
             alert("Смета пуста. Добавьте хотя бы одну позицию.");
@@ -179,19 +187,52 @@ document.addEventListener('DOMContentLoaded', () => {
         y += 10;
         
         estimate.forEach(item => {
+            if (y > 250) { // Перенос на новую страницу
+                doc.addPage();
+                y = 20;
+            }
+        
+            // Название материала и итоговая цена за позицию
             doc.setFont('helvetica', 'bold');
-            doc.text(item.name, 15, y, { maxWidth: 140 });
+            doc.setFontSize(12);
+            doc.text(item.name, 15, y);
             doc.text(`${item.total.toFixed(2)} руб.`, 195, y, { align: 'right'});
-            y += 6;
+            y += 7;
             
-            doc.setFont('helvetica', 'italic');
-            doc.setFontSize(9);
-            const splitBreakdown = doc.splitTextToSize(item.breakdown, 180);
-            doc.text(splitBreakdown, 15, y);
-            y += (splitBreakdown.length * 4) + 6; // Динамический отступ в зависимости от кол-ва строк
+            // Основные параметры
+            doc.setFont('helvetica', 'normal');
+            doc.setFontSize(10);
+            doc.text(`- Параметры: ${item.quantity} шт x (${item.width.toFixed(2)}м x ${item.height.toFixed(2)}м), S=${(item.area * item.quantity).toFixed(2)} м²`, 20, y);
+            y += 6;
+
+            // Детализация по услугам
+            const hasServices = item.services.eyelets.enabled || item.services.cutting.enabled || item.services.layout.enabled;
+            if (hasServices) {
+                doc.setFont('helvetica', 'bold');
+                doc.text('Дополнительные услуги:', 20, y);
+                y += 6;
+                doc.setFont('helvetica', 'normal');
+
+                if (item.services.eyelets.enabled) {
+                    doc.text(`- Люверсы (${item.services.eyelets.count} шт.):`, 25, y);
+                    doc.text(`${item.services.eyelets.cost.toFixed(2)} руб.`, 195, y, { align: 'right'});
+                    y += 5;
+                }
+                if (item.services.cutting.enabled) {
+                    doc.text(`- Резка в край:`, 25, y);
+                    doc.text(`${item.services.cutting.cost.toFixed(2)} руб.`, 195, y, { align: 'right'});
+                    y += 5;
+                }
+                if (item.services.layout.enabled) {
+                    doc.text(`- Разработка макета:`, 25, y);
+                    doc.text(`${item.services.layout.cost.toFixed(2)} руб.`, 195, y, { align: 'right'});
+                    y += 5;
+                }
+            }
+            y += 5; // Отступ после позиции
         });
         
-        doc.line(15, y, 195, y); // Разделитель
+        doc.line(15, y, 195, y);
         y += 10;
         
         const totalValue = estimate.reduce((sum, item) => sum + item.total, 0);
@@ -220,7 +261,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
             navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('ServiceWorker registration successful: ', reg))
+                .then(reg => console.log('ServiceWorker registration successful.', reg.scope))
                 .catch(err => console.log('ServiceWorker registration failed: ', err));
         });
     }
