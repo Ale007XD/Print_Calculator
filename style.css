@@ -14,7 +14,8 @@ body {
     padding: 0;
     background-color: var(--background-color);
     color: var(--text-color);
-    padding-bottom: 220px; /* Отступ для футера */
+    /* Отступ для более высокого футера */
+    padding-bottom: 220px; 
 }
 
 header {
@@ -99,6 +100,28 @@ select {
     margin-right: 0.5rem;
 }
 
+/* Стили для нового информационного блока о макете */
+.layout-info {
+    font-size: 0.85rem;
+    color: #333;
+    margin-top: 10px;
+    padding: 12px;
+    background-color: #e9f5ff; /* Светло-голубой фон */
+    border-left: 4px solid var(--primary-color);
+    border-radius: 4px;
+    line-height: 1.5;
+}
+
+.layout-info a {
+    color: var(--primary-color);
+    font-weight: bold;
+    text-decoration: none;
+}
+
+.layout-info a:hover {
+    text-decoration: underline;
+}
+
 .item-result {
     margin-top: 1rem;
     padding-top: 1rem;
@@ -127,7 +150,7 @@ select {
     font-size: 1.1rem;
     cursor: pointer;
     margin-top: 0; 
-    margin-bottom: 1rem;
+    margin-bottom: 1rem; /* Отступ от итогов */
 }
 
 footer {
@@ -167,16 +190,20 @@ footer {
     cursor: pointer;
 }
 
-/* ИЗМЕНЕНО: Стили для скрытого PDF-отчета */
+/* Скрываем шаблон */
+#item-template {
+    display: none;
+}
+
+/* Стили для скрытого PDF-отчета */
 #pdf-content {
-    /* Прячем элемент за пределами экрана */
     position: absolute;
     left: -9999px;
     top: auto;
-    width: 800px; /* Ширина контента для PDF */
+    width: 800px;
     background: #fff;
     padding: 40px;
-    font-family: 'Roboto', sans-serif; /* Используем Google Font */
+    font-family: 'Roboto', sans-serif;
     color: #000;
 }
 
@@ -215,8 +242,4 @@ footer {
     font-size: 22px;
     font-weight: bold;
     color: #2c3e50;
-}
-/* Скрываем шаблон */
-#item-template {
-    display: none;
 }
