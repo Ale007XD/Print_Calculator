@@ -2,67 +2,66 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <base href="/Print_Calculator/">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Калькулятор печати</title>
-    <link rel="icon" href="icons/icon-192x192.png">
-    <link rel="stylesheet" href="style.css">
+    <title>Расчет стоимости печати</title>
+    <link rel="stylesheet" href="styles.css">
     <link rel="manifest" href="manifest.json">
-    <meta name="theme-color" content="#3498db"/>
+    <meta name="theme-color" content="#4CAF50"/>
 </head>
 <body>
+    <div class="container">
+        <h1>Расчет стоимости печати</h1>
 
-    <div id="app">
-        <!-- Экран 1: Главное меню -->
-        <div id="main-menu" class="screen active">
-            <header><h1>Калькулятор печати</h1></header>
-            <main>
-                <button id="new-calculation-btn" class="btn-main">Новый расчет</button>
-                <div class="info-block"><p>Рассчитывайте стоимость печати, добавляйте услуги и выгружайте смету в PDF.</p></div>
-            </main>
-        </div>
+        <label for="material">Материал:</label>
+        <select id="material">
+            <option value="0" data-name="Выберите материал">Выберите материал</option>
+            <option value="250" data-name="Баннерная ткань 300-340 гр/м2, пр-во Китай">Баннерная ткань 300-340 гр/м2, пр-во Китай</option>
+            <option value="350" data-name="Баннерная ткань 440 гр/м2, пр-во Китай">Баннерная ткань 440 гр/м2, пр-во Китай</option>
+            <option value="500" data-name="Баннерная ткань 520 гр/м2, литая, пр-во Германия">Баннерная ткань 520 гр/м2, литая, пр-во Германия</option>
+        </select>
 
-        <!-- Экран 2: Калькулятор -->
-        <div id="calculator" class="screen">
-            <header>
-                <button id="back-to-menu-btn" class="btn-back">← Меню</button>
-                <h2>Новая позиция</h2>
-            </header>
-            <main>
-                <form id="calc-form">
-                    <div class="form-group"><label for="material-category">Категория</label><select id="material-category"><option value="banner">Баннерная ткань</option><option value="film">Самоклеющаяся пленка</option><option value="paper">Бумага</option></select></div>
-                    <div class="form-group"><label for="material-type">Материал</label><select id="material-type"></select></div>
-                    <div class="form-group dimensions">
-                        <div><label for="width">Ширина (м)</label><input type="number" id="width" placeholder="2.5" step="0.01"></div>
-                        <div><label for="height">Высота (м)</label><input type="number" id="height" placeholder="1.5" step="0.01"></div>
-                    </div>
-                     <div class="form-group"><label for="quantity">Количество (шт)</label><input type="number" id="quantity" value="1" min="1"></div>
-                    <hr><h3>Дополнительные услуги</h3>
-                    <div class="form-group service"><div><label for="eyelets">Добавить люверсы</label><span>Авторасчет (через 25 см)</span></div><input type="checkbox" id="eyelets"></div>
-                    <div class="form-group service"><div><label for="cutting">Резка в край</label><span>По периметру</span></div><input type="checkbox" id="cutting"></div>
-                    <div class="form-group service"><div><label for="layout">Разработка макета</label><span>Стоимость зависит от площади</span></div><input type="checkbox" id="layout"></div>
-                    <button type="submit" class="btn-main">Добавить в смету</button>
-                </form>
-            </main>
-        </div>
+        <label for="width">Ширина (м):</label>
+        <input type="number" id="width" step="0.01" min="0" placeholder="Введите ширину">
 
-        <!-- Экран 3: Смета -->
-        <div id="estimate" class="screen">
-            <header>
-                <button id="back-to-calc-btn" class="btn-back">← Калькулятор</button>
-                <h2>Смета</h2>
-            </header>
-            <main>
-                <div id="estimate-items"></div>
-                <div id="estimate-total"><hr><div class="total-row final-total"><span>Итого:</span><span id="total-amount">0.00 руб.</span></div></div>
-                <button id="export-pdf-btn" class="btn-main">Выгрузить в PDF</button>
-            </main>
+        <label for="height">Высота (м):</label>
+        <input type="number" id="height" step="0.01" min="0" placeholder="Введите высоту">
+
+        <fieldset>
+            <legend>Люверсы</legend>
+            <label>
+                <input type="checkbox" id="grommets_corners"> По углам (+100 руб.)
+            </label>
+            <label>
+                <input type="checkbox" id="grommets_perimeter"> По периметру (шаг 0.25м)
+            </label>
+        </fieldset>
+
+        <button id="calculateBtn">Рассчитать</button>
+        <button id="exportPdfBtn" disabled>Экспорт в PDF</button>
+
+        <div id="result"></div>
+        <div id="details" style="display:none;">
+            <h2>Детали расчета</h2>
+            <table id="detailsTable">
+                <thead>
+                    <tr>
+                        <th>Наименование</th>
+                        <th>Кол-во</th>
+                        <th>Цена</th>
+                        <th>Сумма</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <!-- Rows will be inserted here by JavaScript -->
+                </tbody>
+            </table>
+            <p><strong>Итого: <span id="totalAmount">0</span> руб.</strong></p>
         </div>
     </div>
-    
-    <!-- Оставляем только нужные скрипты -->
-    <script src="lib/jspdf.umd.min.js"></script>
-    <script src="app.js"></script>
 
+    <!-- Include jsPDF and autotable plugin -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <script src="app.js"></script>
 </body>
 </html>
