@@ -1,59 +1,53 @@
-// service-worker.js
-
-const CACHE_NAME = 'printing-calculator-v1.1'; // Изменили имя кэша, чтобы сбросить старый
-// Пути должны быть относительными для корректной работы из подкаталога
-const urlsToCache = [
-  './', // Или '/Print_Calculator/'
-  './index.html',
-  './styles.css',
-  './app.js',
-  './manifest.json'
-  // Добавьте пути к вашим иконкам
-  // './icon-192x192.png',
-  // './icon-512x5152.png'
+const CACHE_NAME = 'print-calculator-v1';
+const URLS_TO_CACHE = [
+    '/Print_Calculator/',
+    '/Print_Calculator/index.html',
+    '/Print_Calculator/style.css',
+    '/Print_Calculator/script.js',
+    '/Print_Calculator/manifest.json',
+    '/Print_Calculator/assets/icon-192x192.png',
+    '/Print_Calculator/assets/icon-512x512.png',
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
 ];
 
-self.addEventListener('install', (event) => {
-  event.waitUntil(
-    caches.open(CACHE_NAME)
-      .then((cache) => {
-        console.log('Opened cache');
-        return cache.addAll(urlsToCache);
-      })
-      .catch(error => {
-        console.error('Failed to cache resources during install:', error);
-      })
-  );
+// Установка Service Worker и кеширование всех ресурсов
+self.addEventListener('install', event => {
+    event.waitUntil(
+        caches.open(CACHE_NAME)
+            .then(cache => {
+                console.log('Opened cache');
+                return cache.addAll(URLS_TO_CACHE);
+            })
+    );
 });
 
-self.addEventListener('fetch', (event) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request).catch(error => {
-            console.error('Fetch failed for:', event.request.url, error);
-            // Здесь можно вернуть fallback-страницу или ресурс
-        });
-      })
-  );
-});
-
-// Опционально: добавьте обработчик activate для очистки старых кэшей
-self.addEventListener('activate', (event) => {
+// Активация и очистка старых кешей
+self.addEventListener('activate', event => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
-    caches.keys().then((cacheNames) => {
+    caches.keys().then(cacheNames => {
       return Promise.all(
-        cacheNames.map((cacheName) => {
-          if (!cacheWhitelist.includes(cacheName)) {
+        cacheNames.map(cacheName => {
+          if (cacheWhitelist.indexOf(cacheName) === -1) {
             return caches.delete(cacheName);
           }
         })
       );
     })
   );
+});
+
+// Обработка запросов: отдавать из кеша, если есть, иначе идти в сеть
+self.addEventListener('fetch', event => {
+    event.respondWith(
+        caches.match(event.request)
+            .then(response => {
+                // Если ресурс найден в кеше, отдаем его
+                if (response) {
+                    return response;
+                }
+                // Иначе, выполняем обычный запрос к сети
+                return fetch(event.request);
+            })
+    );
 });
