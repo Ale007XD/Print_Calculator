@@ -3,65 +3,84 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Расчет стоимости печати</title>
-    <link rel="stylesheet" href="./styles.css">
-    <link rel="manifest" href="./manifest.json">
-    <meta name="theme-color" content="#4CAF50"/>
+    <title>Калькулятор печати</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#3498db">
 </head>
 <body>
-    <div class="container">
-        <h1>Расчет стоимости печати</h1>
 
-        <label for="material">Материал:</label>
-        <select id="material">
-            <option value="0" data-name="Выберите материал">Выберите материал</option>
-            <option value="250" data-name="Баннерная ткань 300-340 гр/м2, пр-во Китай">Баннерная ткань 300-340 гр/м2, пр-во Китай</option>
-            <option value="350" data-name="Баннерная ткань 440 гр/м2, пр-во Китай">Баннерная ткань 440 гр/м2, пр-во Китай</option>
-            <option value="500" data-name="Баннерная ткань 520 гр/м2, литая, пр-во Германия">Баннерная ткань 520 гр/м2, литая, пр-во Германия</option>
-        </select>
+    <header>
+        <h1>Калькулятор печати баннеров</h1>
+    </header>
 
-        <label for="width">Ширина (м):</label>
-        <input type="number" id="width" step="0.01" min="0" placeholder="Введите ширину">
+    <main>
+        <div id="calc-items-container">
+            <!-- Шаблон для одного расчета (будет клонироваться через JS) -->
+            <div class="calc-item" id="item-template">
+                <div class="item-header">
+                    <span class="item-title">Баннер #1</span>
+                    <button class="remove-item-btn" title="Удалить баннер">×</button>
+                </div>
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="width">Ширина (м):</label>
+                        <input type="number" class="width-input" placeholder="1.5" min="0.1" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="height">Высота (м):</label>
+                        <input type="number" class="height-input" placeholder="2.0" min="0.1" step="0.1">
+                    </div>
+                </div>
 
-        <label for="height">Высота (м):</label>
-        <input type="number" id="height" step="0.01" min="0" placeholder="Введите высоту">
+                <div class="form-group">
+                    <label for="material">Материал:</label>
+                    <select class="material-select">
+                        <option value="250">Баннерная ткань 300-340 гр/м² (Китай)</option>
+                        <option value="350">Баннерная ткань 440 гр/м² (Китай)</option>
+                        <option value="500">Баннерная ткань 520 гр/м² (Германия)</option>
+                    </select>
+                </div>
 
-        <fieldset>
-            <legend>Люверсы</legend>
-            <label>
-                <input type="checkbox" id="grommets_corners"> По углам (+100 руб.)
-            </label>
-            <label>
-                <input type="checkbox" id="grommets_perimeter"> По периметру (шаг 0.25м)
-            </label>
-        </fieldset>
+                <div class="form-group">
+                    <label>Люверсы:</label>
+                    <div class="radio-group">
+                        <input type="radio" id="grommets-none-1" name="grommets-1" class="grommets-radio" value="none" checked>
+                        <label for="grommets-none-1">Нет</label>
+                    </div>
+                    <div class="radio-group">
+                        <input type="radio" id="grommets-perimeter-1" name="grommets-1" class="grommets-radio" value="perimeter">
+                        <label for="grommets-perimeter-1">По периметру (1 шт / 0.25 м)</label>
+                    </div>
+                    <div class="radio-group">
+                        <input type="radio" id="grommets-corners-1" name="grommets-1" class="grommets-radio" value="corners">
+                        <label for="grommets-corners-1">По углам (4 шт)</label>
+                    </div>
+                </div>
 
-        <button id="calculateBtn">Рассчитать</button>
-        <button id="exportPdfBtn" disabled>Экспорт в PDF</button>
-
-        <div id="result"></div>
-        <div id="details" style="display:none;">
-            <h2>Детали расчета</h2>
-            <table id="detailsTable">
-                <thead>
-                    <tr>
-                        <th>Наименование</th>
-                        <th>Кол-во</th>
-                        <th>Цена</th>
-                        <th>Сумма</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <!-- Rows will be inserted here by JavaScript -->
-                </tbody>
-            </table>
-            <p><strong>Итого: <span id="totalAmount">0</span> руб.</strong></p>
+                <div class="item-result">
+                    <p>Площадь: <span class="area-output">0.00</span> м²</p>
+                    <p>Стоимость макета: <span class="layout-cost-output">0.00</span> руб.</p>
+                    <p>Итог по баннеру: <strong class="item-total-output">0.00 руб.</strong></p>
+                </div>
+            </div>
         </div>
-    </div>
 
-    <!-- Include jsPDF and autotable plugin -->
+        <button id="add-item-btn">+ Добавить еще баннер</button>
+
+    </main>
+
+    <footer>
+        <div class="total-section">
+            <h2>Общий итог</h2>
+            <p id="grand-total">0.00 руб.</p>
+            <button id="download-pdf-btn">Выгрузить расчет в PDF</button>
+        </div>
+    </footer>
+
+    <!-- Подключение библиотеки jsPDF для генерации PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
-    <script src="./app.js"></script>
+    <script src="script.js"></script>
+
 </body>
 </html>
