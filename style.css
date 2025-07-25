@@ -14,7 +14,7 @@ body {
     padding: 0;
     background-color: var(--background-color);
     color: var(--text-color);
-    padding-bottom: 120px; /* Отступ для футера */
+    padding-bottom: 220px; /* Отступ для футера */
 }
 
 header {
@@ -126,7 +126,8 @@ select {
     border-radius: 8px;
     font-size: 1.1rem;
     cursor: pointer;
-    margin-top: 1rem;
+    margin-top: 0; 
+    margin-bottom: 1rem;
 }
 
 footer {
