@@ -1,5 +1,4 @@
-// ВАЖНО: Версия кэша изменена на v2, чтобы заставить Service Worker обновиться
-const CACHE_NAME = 'print-calculator-v3';
+const CACHE_NAME = 'print-calculator-v5'; // Увеличьте номер версии
 
 // ВАЖНО: Все пути теперь включают имя репозитория 'pwa-calculator'
 const URLS_TO_CACHE = [
