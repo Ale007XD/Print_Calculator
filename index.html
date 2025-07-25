@@ -2,14 +2,10 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <!-- ВАЖНО: Исправлен путь с учетом регистра вашего репозитория -->
     <base href="/Print_Calculator/">
-    
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Калькулятор печати</title>
-    <!-- ВАЖНО: Добавлена ссылка на иконку, чтобы убрать ошибку 404 -->
     <link rel="icon" href="icons/icon-192x192.png">
-    
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3498db"/>
@@ -64,11 +60,9 @@
         </div>
     </div>
     
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <!-- Оставляем только нужные скрипты -->
     <script src="lib/jspdf.umd.min.js"></script>
     <script src="app.js"></script>
-
-    <div id="pdf-template" style="display: none; font-family: Arial, sans-serif; width: 210mm;"></div>
 
 </body>
 </html>
