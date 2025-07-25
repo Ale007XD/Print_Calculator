@@ -1,9 +1,8 @@
 document.addEventListener('DOMContentLoaded', () => {
-    // Весь ваш код до функции handleExportPdf остается без изменений...
     const priceList = {
         banner: [
             { name: "Баннер 300-340 гр/м2 (Китай)", price: 250 },
-            { name: "Баннер 440 гр/м2 (Китай)", price: 360 },
+            { name: "Баннер 440 гр/м2 (Китай)", price: 350 },
             { name: "Баннер 520 гр/м2 (Германия)", price: 500 },
         ],
         film: [
@@ -16,10 +15,10 @@ document.addEventListener('DOMContentLoaded', () => {
             { name: "Бумага постерная", price: 320 },
         ],
         services: {
-            eyelets: 20, // цена за люверс
-            cutting: 10, // цена за рез в край
-            layout_small: 150, // цена 1 м2 макета меньше 10 м2
-            layout_large: 80, // цена 1 м2 макета больше 10 м2
+            eyelets: 20,
+            cutting: 10,
+            layout_small: 150,
+            layout_large: 80,
         }
     };
     let estimate = [];
@@ -33,6 +32,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const estimateItemsContainer = document.getElementById('estimate-items');
     const totalEl = document.getElementById('total-amount');
     const exportPdfBtn = document.getElementById('export-pdf-btn');
+    const pdfTemplate = document.getElementById('pdf-template');
 
     const navigateTo = (screenId) => {
         screens.forEach(s => s.classList.remove('active'));
@@ -84,43 +84,27 @@ document.addEventListener('DOMContentLoaded', () => {
         const width = parseFloat(document.getElementById('width').value) || 0;
         const height = parseFloat(document.getElementById('height').value) || 0;
         const quantity = parseInt(document.getElementById('quantity').value) || 1;
-
         if (width === 0 || height === 0) {
             alert('Пожалуйста, укажите ширину и высоту.');
             return;
         }
-
         const area = width * height;
         let totalCost = area * material.price * quantity;
-        
-        const services = {
-            eyelets: { enabled: false, count: 0, cost: 0 },
-            cutting: { enabled: false, cost: 0 },
-            layout: { enabled: false, cost: 0 },
-        };
-
+        const services = { eyelets: { enabled: false }, cutting: { enabled: false }, layout: { enabled: false } };
         if (document.getElementById('eyelets').checked) {
             const perimeter = (width + height) * 2;
             const eyeletsCount = Math.ceil(perimeter / 0.25) * quantity;
-            const eyeletsCost = eyeletsCount * priceList.services.eyelets;
-            services.eyelets = { enabled: true, count: eyeletsCount, cost: eyeletsCost };
-            totalCost += eyeletsCost;
+            services.eyelets = { enabled: true, count: eyeletsCount };
+            totalCost += eyeletsCount * priceList.services.eyelets;
         }
-
         if (document.getElementById('cutting').checked) {
-            const perimeter = (width + height) * 2;
-            const cuttingCost = perimeter * priceList.services.cutting * quantity;
-            services.cutting = { enabled: true, cost: cuttingCost };
-            totalCost += cuttingCost;
+            services.cutting.enabled = true;
+            totalCost += (width + height) * 2 * priceList.services.cutting * quantity;
         }
-        
         if (document.getElementById('layout').checked) {
-            const layoutPricePerSqm = area < 10 ? priceList.services.layout_small : priceList.services.layout_large;
-            const layoutCost = area * layoutPricePerSqm * quantity;
-            services.layout = { enabled: true, cost: layoutCost };
-            totalCost += layoutCost;
+            services.layout.enabled = true;
+            totalCost += area * (area < 10 ? priceList.services.layout_small : priceList.services.layout_large) * quantity;
         }
-
         let htmlServicesTexts = [];
         if (services.eyelets.enabled) htmlServicesTexts.push(`${services.eyelets.count} люверсов`);
         if (services.cutting.enabled) htmlServicesTexts.push(`резка`);
@@ -129,15 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (htmlServicesTexts.length > 0) {
             htmlBreakdown += ` | Услуги: ${htmlServicesTexts.join(', ')}`;
         }
-        
-        estimate.push({
-            name: material.name,
-            width, height, quantity, area,
-            total: totalCost,
-            services: services,
-            htmlBreakdown: htmlBreakdown
-        });
-        
+        estimate.push({ name: material.name, total: totalCost, htmlBreakdown: htmlBreakdown });
         renderEstimate();
         navigateTo('estimate');
         calcForm.reset();
@@ -152,57 +128,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // --- НОВАЯ, ПРОСТАЯ И НАДЕЖНАЯ ФУНКЦИЯ СОЗДАНИЯ PDF ---
     const handleExportPdf = () => {
         if (estimate.length === 0) {
-            alert("Смета пуста. Добавьте хотя бы одну позицию.");
+            alert("Смета пуста.");
             return;
         }
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF();
-        const pdfTemplate = document.getElementById('pdf-template');
         
-        // 1. Генерируем HTML-содержимое для нашей сметы
-        let content = `<h1>Смета на печатную продукцию</h1>`;
-        content += `<div class="date">Дата: ${new Date().toLocaleDateString('ru-RU')}</div>`;
-
+        let content = `<h1>Смета на печатную продукцию</h1><div class="date">Дата: ${new Date().toLocaleDateString('ru-RU')}</div>`;
         estimate.forEach(item => {
-            content += `<div class="item">`;
-            content += `<div class="item-header"><span>${item.name}</span><span>${item.total.toFixed(2)} руб.</span></div>`;
-            content += `<div class="item-details">Параметры: ${item.quantity} шт x (${item.width.toFixed(2)}м x ${item.height.toFixed(2)}м), S=${(item.area * item.quantity).toFixed(2)} м²</div>`;
-            
-            if (item.services.eyelets.enabled || item.services.cutting.enabled || item.services.layout.enabled) {
-                let servicesHtml = '<div class="service-details">Доп. услуги: ';
-                const servicesList = [];
-                if (item.services.eyelets.enabled) servicesList.push(`Люверсы (${item.services.eyelets.count} шт)`);
-                if (item.services.cutting.enabled) servicesList.push('Резка в край');
-                if (item.services.layout.enabled) servicesList.push('Разработка макета');
-                servicesHtml += servicesList.join(', ');
-                servicesHtml += '</div>';
-                content += servicesHtml;
-            }
-            content += `</div>`;
+            content += `<div class="item"><div class="item-header"><span>${item.name}</span><span>${item.total.toFixed(2)} руб.</span></div><div class="item-details">${item.htmlBreakdown}</div></div>`;
         });
-
         const totalValue = estimate.reduce((sum, item) => sum + item.total, 0);
         content += `<div class="total">Итого к оплате: ${totalValue.toFixed(2)} руб.</div>`;
-
-        // 2. Помещаем сгенерированный HTML в наш невидимый шаблон
+        
         pdfTemplate.innerHTML = content;
         
-        // 3. Вызываем команду для конвертации HTML в PDF
         doc.html(pdfTemplate, {
             callback: function(doc) {
                 doc.save(`Смета_${new Date().toISOString().slice(0,10)}.pdf`);
             },
-            x: 0,
-            y: 0,
-            width: 210, // ширина листа A4 в мм
-            windowWidth: 1000 // ширина окна для рендеринга
+            x: 10,
+            y: 10,
+            width: 190,
+            windowWidth: 750,
         });
     };
 
-    // --- Привязка событий ---
     newCalcBtn.addEventListener('click', () => navigateTo('calculator'));
     backToMenuBtn.addEventListener('click', () => navigateTo('main-menu'));
     backToCalcBtn.addEventListener('click', () => navigateTo('calculator'));
@@ -211,7 +164,6 @@ document.addEventListener('DOMContentLoaded', () => {
     estimateItemsContainer.addEventListener('click', handleDeleteItem);
     exportPdfBtn.addEventListener('click', handleExportPdf);
     
-    // --- Инициализация ---
     navigateTo('main-menu');
     updateMaterialOptions();
 
