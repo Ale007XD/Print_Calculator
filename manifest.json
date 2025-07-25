@@ -1,21 +1,20 @@
 {
-  "name": "Калькулятор Печати",
-  "short_name": "КалькПечати",
-  "description": "Приложение для расчета стоимости широкоформатной печати.",
-  "icons": [
-    {
-      "src": "icons/icon-192x192.png",
-      "type": "image/png",
-      "sizes": "192x192"
-    },
-    {
-      "src": "icons/icon-512x512.png",
-      "type": "image/png",
-      "sizes": "512x512"
-    }
-  ],
-  "start_url": ".",
-  "display": "standalone",
-  "theme_color": "#3498db",
-  "background_color": "#ffffff"
-}
+    "name": "Расчет стоимости печати",
+    "short_name": "Печать Калькулятор",
+    "start_url": ".",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "description": "PWA-калькулятор для расчета стоимости печати на баннерной ткани.",
+    "icons": [
+        {
+          "src": "icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        },
+        {
+          "src": "icon-512x512.png",
+          "sizes": "512x512",
+          "type": "image/png"
+        }
+      ]
+  }
