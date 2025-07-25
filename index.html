@@ -4,6 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Калькулятор печати</title>
+    <!-- ИЗМЕНЕНО: Подключаем Google Font для красивого отчета -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    
     <link rel="stylesheet" href="style.css">
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#3498db">
@@ -24,24 +29,22 @@
                 </div>
                 <div class="form-grid">
                     <div class="form-group">
-                        <label for="width">Ширина (м):</label>
+                        <label>Ширина (м):</label>
                         <input type="number" class="width-input" placeholder="1.5" min="0.1" step="0.1">
                     </div>
                     <div class="form-group">
-                        <label for="height">Высота (м):</label>
+                        <label>Высота (м):</label>
                         <input type="number" class="height-input" placeholder="2.0" min="0.1" step="0.1">
                     </div>
                 </div>
-
                 <div class="form-group">
-                    <label for="material">Материал:</label>
+                    <label>Материал:</label>
                     <select class="material-select">
                         <option value="250">Баннерная ткань 300-340 гр/м² (Китай)</option>
-                        <option value="350">Баннерная ткань 440 гр/м² (Китай)</option>
+                        <option value="350" selected>Баннерная ткань 440 гр/м² (Китай)</option>
                         <option value="500">Баннерная ткань 520 гр/м² (Германия)</option>
                     </select>
                 </div>
-
                 <div class="form-group">
                     <label>Люверсы:</label>
                     <div class="radio-group">
@@ -54,10 +57,9 @@
                     </div>
                     <div class="radio-group">
                         <input type="radio" id="grommets-corners-1" name="grommets-1" class="grommets-radio" value="corners">
-                        <label for="grommets-corners-1">По углам (4 шт)</label>
+                        <label for="grommets-corners-1">По углам (фикс. цена)</label>
                     </div>
                 </div>
-
                 <div class="item-result">
                     <p>Площадь: <span class="area-output">0.00</span> м²</p>
                     <p>Стоимость макета: <span class="layout-cost-output">0.00</span> руб.</p>
@@ -65,9 +67,7 @@
                 </div>
             </div>
         </div>
-
         <button id="add-item-btn">+ Добавить еще баннер</button>
-
     </main>
 
     <footer>
@@ -77,9 +77,14 @@
             <button id="download-pdf-btn">Выгрузить расчет в PDF</button>
         </div>
     </footer>
+    
+    <!-- ИЗМЕНЕНО: Скрытый контейнер для генерации PDF -->
+    <div id="pdf-content"></div>
 
-    <!-- Подключение библиотеки jsPDF для генерации PDF -->
+    <!-- Подключение библиотек -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <!-- НЕ НУЖЕН ФАЙЛ ШРИФТА -->
     <script src="script.js"></script>
 
 </body>
