@@ -1,4 +1,4 @@
-const CACHE_NAME = 'print-calculator-v1';
+const CACHE_NAME = 'print-calculator-v3'; // Снова увеличиваем версию кеша
 const URLS_TO_CACHE = [
     '/Print_Calculator/',
     '/Print_Calculator/index.html',
@@ -7,7 +7,12 @@ const URLS_TO_CACHE = [
     '/Print_Calculator/manifest.json',
     '/Print_Calculator/assets/icon-192x192.png',
     '/Print_Calculator/assets/icon-512x512.png',
-    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js'
+    // ИЗМЕНЕНО: Кешируем новые библиотеки
+    'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+    // Кешируем сам шрифт
+    'https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap',
+    'https://fonts.gstatic.com/s/roboto/v30/KFOmCnqEu92Fr1Mu4mxK.woff2' // Может отличаться, но SW сам закеширует нужное
 ];
 
 // Установка Service Worker и кеширование всех ресурсов
