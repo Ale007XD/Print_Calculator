@@ -1,9 +1,9 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- НАСТРОЙКИ ---
     const PRICES = {
-        edge_cutting: 10,  // за погонный метр
-        grommet_piece: 20, // за штуку
-        grommets_corners_fixed_price: 100 // фикс. цена за люверсы по углам
+        edge_cutting: 10,
+        grommet_piece: 20,
+        grommets_corners_fixed_price: 100
     };
 
     // --- ЭЛЕМЕНТЫ DOM ---
@@ -12,85 +12,58 @@ document.addEventListener('DOMContentLoaded', () => {
     const grandTotalElement = document.getElementById('grand-total');
     const downloadPdfBtn = document.getElementById('download-pdf-btn');
     const itemTemplate = document.getElementById('item-template');
+    const pdfContent = document.getElementById('pdf-content'); // Контейнер для отчета
 
     let itemCounter = 0;
 
-    // --- ФУНКЦИИ ---
-
-    /**
-     * Добавление нового блока для расчета баннера
-     */
-    function addNewItem() {
-        itemCounter++;
-        const newItem = itemTemplate.cloneNode(true);
-        newItem.style.display = 'block';
-        newItem.id = `item-${itemCounter}`;
-        
-        newItem.querySelector('.item-title').textContent = `Баннер #${itemCounter}`;
-        
-        const radioButtons = newItem.querySelectorAll('.grommets-radio');
-        radioButtons.forEach(radio => {
-            radio.name = `grommets-${itemCounter}`;
-            // Обновляем id и for у radio и label для уникальности
-            const oldId = radio.id;
-            const newId = `${radio.id.split('-').slice(0, -1).join('-')}-${itemCounter}`;
-            radio.id = newId;
-            newItem.querySelector(`label[for="${oldId}"]`).setAttribute('for', newId);
-        });
-
-        container.appendChild(newItem);
-        updateAll();
-    }
-
-    /**
-     * Расчет стоимости макета
-     */
     function getLayoutCost(area) {
         if (area <= 0) return 0;
         if (area <= 3) return 750;
         if (area > 3 && area <= 6) return 1000;
-        return area * 150; // Больше 6 м2
+        return area * 150;
+    }
+    
+    function parseItemData(itemElement) {
+        const width = parseFloat(itemElement.querySelector('.width-input').value) || 0;
+        const height = parseFloat(itemElement.querySelector('.height-input').value) || 0;
+        const materialSelect = itemElement.querySelector('.material-select');
+        const materialPrice = parseFloat(materialSelect.value) || 0;
+        const materialText = materialSelect.options[materialSelect.selectedIndex].text;
+        const checkedRadio = itemElement.querySelector('.grommets-radio:checked');
+        const grommetOption = checkedRadio ? checkedRadio.value : 'none';
+        let grommetText = "Нет";
+        if (grommetOption === 'perimeter') grommetText = "По периметру (1 шт / 0.25 м)";
+        if (grommetOption === 'corners') grommetText = "По углам (фикс. цена)";
+
+        return {
+            title: itemElement.querySelector('.item-title').textContent,
+            width, height,
+            area: width * height,
+            perimeter: (width + height) * 2,
+            materialPrice, materialText,
+            grommetOption, grommetText,
+        };
     }
 
-    /**
-     * Основная функция расчета
-     */
     function calculateTotal() {
         let grandTotal = 0;
         const calcItems = container.querySelectorAll('.calc-item:not(#item-template)');
 
         calcItems.forEach(item => {
-            const width = parseFloat(item.querySelector('.width-input').value) || 0;
-            const height = parseFloat(item.querySelector('.height-input').value) || 0;
-            const materialPrice = parseFloat(item.querySelector('.material-select').value) || 0;
-            const grommetOption = item.querySelector('.grommets-radio:checked').value;
-
-            const area = width * height;
-            const perimeter = (width + height) * 2;
-
-            // 1. Стоимость материала
-            const materialCost = area * materialPrice;
-
-            // 2. Стоимость резки
-            const cuttingCost = perimeter * PRICES.edge_cutting;
-
-            // 3. Стоимость макета
-            const layoutCost = getLayoutCost(area);
-            
-            // 4. Стоимость люверсов
+            const data = parseItemData(item);
+            const materialCost = data.area * data.materialPrice;
+            const cuttingCost = data.perimeter * PRICES.edge_cutting;
+            const layoutCost = getLayoutCost(data.area);
             let grommetsCost = 0;
-            if (grommetOption === 'perimeter' && perimeter > 0) {
-                const grommetCount = Math.ceil(perimeter / 0.25);
-                grommetsCost = grommetCount * PRICES.grommet_piece;
-            } else if (grommetOption === 'corners') {
+            if (data.grommetOption === 'perimeter' && data.perimeter > 0) {
+                grommetsCost = Math.ceil(data.perimeter / 0.25) * PRICES.grommet_piece;
+            } else if (data.grommetOption === 'corners') {
                 grommetsCost = PRICES.grommets_corners_fixed_price;
             }
-
             const itemTotal = materialCost + cuttingCost + layoutCost + grommetsCost;
             grandTotal += itemTotal;
 
-            // Обновление отображения для элемента
-            item.querySelector('.area-output').textContent = area.toFixed(2);
+            item.querySelector('.area-output').textContent = data.area.toFixed(2);
             item.querySelector('.layout-cost-output').textContent = layoutCost.toFixed(2);
             item.querySelector('.item-total-output').textContent = `${itemTotal.toFixed(2)} руб.`;
         });
@@ -98,118 +71,123 @@ document.addEventListener('DOMContentLoaded', () => {
         grandTotalElement.textContent = `${grandTotal.toFixed(2)} руб.`;
     }
 
-    /**
-     * Обновление всего (вешаем на события)
-     */
-    function updateAll() {
+    function addNewItem() {
+        itemCounter++;
+        const newItem = itemTemplate.cloneNode(true);
+        newItem.style.display = 'block';
+        newItem.id = `item-${itemCounter}`;
+        newItem.querySelector('.item-title').textContent = `Баннер #${itemCounter}`;
+        const radioButtons = newItem.querySelectorAll('.grommets-radio');
+        radioButtons.forEach(radio => {
+            const oldId = radio.id;
+            const newId = `${oldId.split('-').slice(0, -1).join('-')}-${itemCounter}`;
+            radio.name = `grommets-${itemCounter}`;
+            radio.id = newId;
+            newItem.querySelector(`label[for="${oldId}"]`).setAttribute('for', newId);
+        });
+        newItem.querySelector('input[value="none"]').checked = true;
+        container.appendChild(newItem);
         calculateTotal();
     }
-    
-    /**
-     * Генерация и загрузка PDF
-     */
+
+    // ИЗМЕНЕНО: Полностью новая функция генерации PDF
     async function generatePdf() {
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF();
-
-        // Установка шрифта, поддерживающего кириллицу
-        doc.setFont("Arial", "normal");
-
-        let y = 20; // Начальная позиция по Y
-
-        doc.setFontSize(18);
-        doc.text("Расчет стоимости печати баннеров", 105, y, { align: "center" });
-        y += 15;
-
+        // 1. Формируем HTML для отчета
+        let reportHtml = `<h1>Расчет стоимости печати</h1>`;
         const calcItems = container.querySelectorAll('.calc-item:not(#item-template)');
         
-        calcItems.forEach((item, index) => {
-            if (y > 270) { // Перенос на новую страницу
-                doc.addPage();
-                y = 20;
-            }
-
-            const title = item.querySelector('.item-title').textContent;
-            const width = parseFloat(item.querySelector('.width-input').value) || 0;
-            const height = parseFloat(item.querySelector('.height-input').value) || 0;
-            const materialSelect = item.querySelector('.material-select');
-            const materialText = materialSelect.options[materialSelect.selectedIndex].text;
-            const grommetOption = item.querySelector('.grommets-radio:checked').value;
+        calcItems.forEach(item => {
+            const data = parseItemData(item);
+            const layoutCost = getLayoutCost(data.area);
             const itemTotal = item.querySelector('.item-total-output').textContent;
-            const area = (width * height).toFixed(2);
-            const layoutCost = getLayoutCost(width*height).toFixed(2);
-
-            let grommetText = "Нет";
-            if (grommetOption === 'perimeter') grommetText = "По периметру (1 шт / 0.25 м)";
-            if (grommetOption === 'corners') grommetText = "По углам (4 шт)";
-
-            doc.setFontSize(14);
-            doc.text(`${title}`, 15, y);
-            y += 8;
-            doc.setFontSize(10);
-            doc.text(`- Размеры (ШхВ): ${width} м x ${height} м, Площадь: ${area} м²`, 20, y);
-            y += 6;
-            doc.text(`- Материал: ${materialText}`, 20, y);
-            y += 6;
-            doc.text(`- Люверсы: ${grommetText}`, 20, y);
-            y += 6;
-            doc.text(`- Стоимость макета: ${layoutCost} руб.`, 20, y);
-            y += 8;
-            doc.setFontSize(12);
-            doc.setFont("Arial", "bold");
-            doc.text(`Итог по баннеру: ${itemTotal}`, 20, y);
-            doc.setFont("Arial", "normal");
-            y += 15;
+            
+            reportHtml += `
+                <div class="pdf-item">
+                    <h2>${data.title}</h2>
+                    <p><b>Размеры (ШхВ):</b> ${data.width} м x ${data.height} м</p>
+                    <p><b>Площадь:</b> ${data.area.toFixed(2)} м²</p>
+                    <p><b>Материал:</b> ${data.materialText}</p>
+                    <p><b>Люверсы:</b> ${data.grommetText}</p>
+                    <p><b>Стоимость макета:</b> ${layoutCost.toFixed(2)} руб.</p>
+                    <p><b>Итог по баннеру:</b> ${itemTotal}</p>
+                </div>
+            `;
         });
-
-        const grandTotal = grandTotalElement.textContent;
-        doc.setFontSize(16);
-        doc.setFont("Arial", "bold");
-        doc.text(`Общий итог: ${grandTotal}`, 105, y, { align: 'center' });
         
-        doc.save("расчет_печати.pdf");
-    }
+        const grandTotal = grandTotalElement.textContent;
+        reportHtml += `
+            <div class="pdf-total">
+                <p>Общий итог: ${grandTotal}</p>
+            </div>
+        `;
+        
+        pdfContent.innerHTML = reportHtml;
 
+        // 2. Используем html2canvas для создания "скриншота"
+        const canvas = await html2canvas(pdfContent, { scale: 2 }); // scale: 2 для лучшего качества
+        const imgData = canvas.toDataURL('image/png');
+
+        // 3. Вставляем скриншот в jsPDF
+        const { jsPDF } = window.jspdf;
+        const pdf = new jsPDF({
+            orientation: 'p', // portrait
+            unit: 'mm',
+            format: 'a4'
+        });
+        
+        const pdfWidth = pdf.internal.pageSize.getWidth();
+        const pdfHeight = pdf.internal.pageSize.getHeight();
+        const imgWidth = canvas.width;
+        const imgHeight = canvas.height;
+        const ratio = imgWidth / imgHeight;
+        
+        let finalImgWidth = pdfWidth - 20; // отступы по 10мм
+        let finalImgHeight = finalImgWidth / ratio;
+        
+        // Проверяем, не выходит ли изображение за пределы страницы по высоте
+        if (finalImgHeight > pdfHeight - 20) {
+            finalImgHeight = pdfHeight - 20;
+            finalImgWidth = finalImgHeight * ratio;
+        }
+
+        const x = (pdfWidth - finalImgWidth) / 2; // Центрируем по горизонтали
+        
+        pdf.addImage(imgData, 'PNG', x, 10, finalImgWidth, finalImgHeight);
+        pdf.save('расчет_печати.pdf');
+
+        // Очищаем временный HTML
+        pdfContent.innerHTML = '';
+    }
 
     // --- РЕГИСТРАЦИЯ СОБЫТИЙ ---
     addItemBtn.addEventListener('click', addNewItem);
     downloadPdfBtn.addEventListener('click', generatePdf);
-
-    container.addEventListener('input', updateAll);
-    container.addEventListener('change', updateAll);
-    
+    container.addEventListener('input', calculateTotal);
+    container.addEventListener('change', calculateTotal);
     container.addEventListener('click', (e) => {
         if (e.target.classList.contains('remove-item-btn')) {
-            // Находим родительский .calc-item и удаляем его
-            const itemToRemove = e.target.closest('.calc-item');
-            if (itemToRemove && container.querySelectorAll('.calc-item:not(#item-template)').length > 1) {
-                itemToRemove.remove();
-                // Перенумеровываем заголовки
-                container.querySelectorAll('.calc-item:not(#item-template)').forEach((item, index) => {
-                    item.querySelector('.item-title').textContent = `Баннер #${index + 1}`;
-                });
-                itemCounter--;
-                updateAll();
-            } else {
-                alert('Нельзя удалить последний элемент.');
-            }
+            const items = container.querySelectorAll('.calc-item:not(#item-template)');
+            if (items.length <= 1) return alert('Нельзя удалить последний элемент.');
+            e.target.closest('.calc-item').remove();
+            container.querySelectorAll('.calc-item:not(#item-template)').forEach((item, index) => {
+                item.querySelector('.item-title').textContent = `Баннер #${index + 1}`;
+            });
+            itemCounter--;
+            calculateTotal();
         }
     });
 
     // --- ИНИЦИАЛИЗАЦИЯ ---
-    addNewItem(); // Создаем первый элемент при загрузке
-});
+    addNewItem();
 
-
-// --- ЛОГИКА PWA (SERVICE WORKER) ---
-if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-        navigator.serviceWorker.register('/Print_Calculator/service-worker.js')
-            .then(registration => {
-                console.log('ServiceWorker registration successful with scope: ', registration.scope);
-            })
-            .catch(error => {
-                console.log('ServiceWorker registration failed: ', error);
+    // --- ЛОГИКА PWA ---
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('service-worker.js').then(reg => {
+                console.log('ServiceWorker registration successful', reg);
+            }).catch(err => {
+                console.error('ServiceWorker registration failed', err);
             });
-    });
-}
+        });
+    }
+});
