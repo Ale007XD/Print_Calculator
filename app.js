@@ -1,223 +1,207 @@
+// app.js
+
+// Инициализация jsPDF (если используется UMD версия)
+const { jsPDF } = window.jspdf;
+
 document.addEventListener('DOMContentLoaded', () => {
-    const priceList = {
-        banner: [
-            { name: "Баннер 300-340 гр/м2 (Китай)", price: 250 },
-            { name: "Баннер 440 гр/м2 (Китай)", price: 350 },
-            { name: "Баннер 520 гр/м2 (Германия)", price: 500 },
-        ],
-        film: [
-            { name: "Белая/прозрачная пленка", price: 400 },
-            { name: "Транслюцентная пленка", price: 550 },
-        ],
-        paper: [
-            { name: "Бумага полипропилен", price: 380 },
-            { name: "Бумага BlueBack", price: 280 },
-            { name: "Бумага постерная", price: 320 },
-        ],
-        services: {
-            eyelets: 25,
-            cutting: 10,
-            layout_small: 125,
-            layout_large: 80,
-        }
-    };
-    let estimate = [];
-    const screens = document.querySelectorAll('.screen');
-    const newCalcBtn = document.getElementById('new-calculation-btn');
-    const backToMenuBtn = document.getElementById('back-to-menu-btn');
-    const backToCalcBtn = document.getElementById('back-to-calc-btn');
-    const calcForm = document.getElementById('calc-form');
-    const categorySelect = document.getElementById('material-category');
-    const materialSelect = document.getElementById('material-type');
-    const estimateItemsContainer = document.getElementById('estimate-items');
-    const totalEl = document.getElementById('total-amount');
-    const exportPdfBtn = document.getElementById('export-pdf-btn');
-    const pdfTemplate = document.getElementById('pdf-template');
+    const materialSelect = document.getElementById('material');
+    const widthInput = document.getElementById('width');
+    const heightInput = document.getElementById('height');
+    const grommetsCornersCheckbox = document.getElementById('grommets_corners');
+    const grommetsPerimeterCheckbox = document.getElementById('grommets_perimeter');
+    const calculateBtn = document.getElementById('calculateBtn');
+    const exportPdfBtn = document.getElementById('exportPdfBtn');
+    const resultDiv = document.getElementById('result');
+    const detailsDiv = document.getElementById('details');
+    const detailsTableBody = document.querySelector('#detailsTable tbody');
+    const totalAmountSpan = document.getElementById('totalAmount');
 
-    const navigateTo = (screenId) => {
-        screens.forEach(s => s.classList.remove('active'));
-        document.getElementById(screenId).classList.add('active');
-    };
+    let calculationData = {}; // Хранение данных для экспорта
 
-    const updateMaterialOptions = () => {
-        const category = categorySelect.value;
-        const materials = priceList[category];
-        materialSelect.innerHTML = '';
-        materials.forEach((material, index) => {
-            const option = document.createElement('option');
-            option.value = index;
-            option.textContent = `${material.name} (${material.price.toFixed(2)} руб./м²)`;
-            materialSelect.appendChild(option);
-        });
-    };
-    
-    const renderEstimate = () => {
-        estimateItemsContainer.innerHTML = '';
-        if (estimate.length === 0) {
-            estimateItemsContainer.innerHTML = '<p>Пока ничего не добавлено.</p>';
-        } else {
-            estimate.forEach((item, index) => {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'estimate-item';
-                itemEl.innerHTML = `
-                    <div class="item-details">
-                        <div class="item-name">${item.name}</div>
-                        <div class="item-breakdown">${item.htmlBreakdown}</div>
-                    </div>
-                    <div class="item-price">${item.total.toFixed(2)}</div>
-                    <button class="item-delete-btn" data-index="${index}">×</button>
-                `;
-                estimateItemsContainer.appendChild(itemEl);
-            });
-        }
-        updateTotal();
-    };
-    
-    const updateTotal = () => {
-        const total = estimate.reduce((sum, item) => sum + item.total, 0);
-        totalEl.textContent = `${total.toFixed(2)} руб.`;
-    };
-    
-    const handleFormSubmit = (e) => {
-        e.preventDefault();
-        const material = priceList[categorySelect.value][materialSelect.value];
-        const width = parseFloat(document.getElementById('width').value) || 0;
-        const height = parseFloat(document.getElementById('height').value) || 0;
-        const quantity = parseInt(document.getElementById('quantity').value) || 1;
-        if (width === 0 || height === 0) {
-            alert('Пожалуйста, укажите ширину и высоту.');
-            return;
-        }
-        const area = width * height;
-        let totalCost = area * material.price * quantity;
-        
-        const services = {
-            eyelets: { enabled: false, count: 0, cost: 0 },
-            cutting: { enabled: false, cost: 0 },
-            layout: { enabled: false, cost: 0 },
-        };
-
-        if (document.getElementById('eyelets').checked) {
-            const perimeter = (width + height) * 2;
-            const eyeletsCount = Math.ceil(perimeter / 0.25) * quantity;
-            const eyeletsCost = eyeletsCount * priceList.services.eyelets;
-            services.eyelets = { enabled: true, count: eyeletsCount, cost: eyeletsCost };
-            totalCost += eyeletsCost;
-        }
-        if (document.getElementById('cutting').checked) {
-            const perimeter = (width + height) * 2;
-            const cuttingCost = perimeter * priceList.services.cutting * quantity;
-            services.cutting = { enabled: true, cost: cuttingCost };
-            totalCost += cuttingCost;
-        }
-        if (document.getElementById('layout').checked) {
-            const layoutPricePerSqm = area < 10 ? priceList.services.layout_small : priceList.services.layout_large;
-            const layoutCost = area * layoutPricePerSqm * quantity;
-            services.layout = { enabled: true, cost: layoutCost };
-            totalCost += layoutCost;
-        }
-
-        let htmlServicesTexts = [];
-        if (services.eyelets.enabled) htmlServicesTexts.push(`${services.eyelets.count} люверсов`);
-        if (services.cutting.enabled) htmlServicesTexts.push(`резка`);
-        if (services.layout.enabled) htmlServicesTexts.push(`макет`);
-        let htmlBreakdown = `${quantity} шт x (${width}м x ${height}м) = ${(area * quantity).toFixed(2)} м²`;
-        if (htmlServicesTexts.length > 0) {
-            htmlBreakdown += ` | Услуги: ${htmlServicesTexts.join(', ')}`;
-        }
-        
-        estimate.push({
-            name: material.name, width, height, quantity, area,
-            total: totalCost, services: services, htmlBreakdown: htmlBreakdown
-        });
-        
-        renderEstimate();
-        navigateTo('estimate');
-        calcForm.reset();
-        updateMaterialOptions();
-    };
-
-    const handleDeleteItem = (e) => {
-        if (e.target.classList.contains('item-delete-btn')) {
-            const index = e.target.dataset.index;
-            estimate.splice(index, 1);
-            renderEstimate();
-        }
-    };
-    
-    // --- ИСПРАВЛЕННАЯ И НАДЕЖНАЯ ФУНКЦИЯ СОЗДАНИЯ PDF ---
-    const handleExportPdf = async () => {
-        if (estimate.length === 0) {
-            alert("Смета пуста. Добавьте хотя бы одну позицию.");
-            return;
-        }
-        
-        // 1. Создаем HTML-строку для сметы
-        let content = `<h1>Смета на печатную продукцию</h1>`;
-        content += `<div class="date">Дата: ${new Date().toLocaleDateString('ru-RU')}</div>`;
-
-        estimate.forEach(item => {
-            content += `<div class="item">`;
-            content += `<div class="item-header"><span>${item.name}</span><span>${item.total.toFixed(2)} руб.</span></div>`;
-            content += `<div class="item-details"><b>Параметры:</b> ${item.quantity} шт x (${item.width.toFixed(2)}м x ${item.height.toFixed(2)}м), S=${(item.area * item.quantity).toFixed(2)} м²</div>`;
-            
-            if (item.services.eyelets.enabled || item.services.cutting.enabled || item.services.layout.enabled) {
-                let servicesHtml = '<div class="service-details"><b>Доп. услуги:</b> ';
-                const servicesList = [];
-                if (item.services.eyelets.enabled) servicesList.push(`Люверсы (${item.services.eyelets.count} шт)`);
-                if (item.services.cutting.enabled) servicesList.push('Резка в край');
-                if (item.services.layout.enabled) servicesList.push('Разработка макета');
-                servicesHtml += servicesList.join(', ');
-                servicesHtml += '</div>';
-                content += servicesHtml;
-            }
-            content += `</div>`;
-        });
-
-        const totalValue = estimate.reduce((sum, item) => sum + item.total, 0);
-        content += `<div class="total">Итого к оплате: ${totalValue.toFixed(2)} руб.</div>`;
-
-        // 2. Помещаем сгенерированный HTML в наш невидимый шаблон
-        pdfTemplate.innerHTML = content;
-
-        // 3. Создаем PDF и ждем, пока он будет готов
-        const { jsPDF } = window.jspdf;
-        const doc = new jsPDF({
-            orientation: 'p',
-            unit: 'mm',
-            format: 'a4'
-        });
-        
-        // Ключевое изменение: используем await, чтобы дождаться завершения
-        await doc.html(pdfTemplate, {
-            x: 10,
-            y: 10,
-            width: 190, // Ширина контента, чтобы были отступы на листе A4
-            windowWidth: 700 // Ширина "виртуального браузера" для рендеринга
-        });
-        
-        // 4. Сохраняем документ только после того, как он полностью отрисован
-        doc.save(`Смета_${new Date().toISOString().slice(0,10)}.pdf`);
-    };
-
-    // --- Привязка событий ---
-    newCalcBtn.addEventListener('click', () => navigateTo('calculator'));
-    backToMenuBtn.addEventListener('click', () => navigateTo('main-menu'));
-    backToCalcBtn.addEventListener('click', () => navigateTo('calculator'));
-    categorySelect.addEventListener('change', updateMaterialOptions);
-    calcForm.addEventListener('submit', handleFormSubmit);
-    estimateItemsContainer.addEventListener('click', handleDeleteItem);
-    exportPdfBtn.addEventListener('click', handleExportPdf);
-    
-    // --- Инициализация ---
-    navigateTo('main-menu');
-    updateMaterialOptions();
-
+    // Регистрация Service Worker для PWA
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-            navigator.serviceWorker.register('sw.js')
-                .then(reg => console.log('ServiceWorker registration successful.', reg.scope))
-                .catch(err => console.log('ServiceWorker registration failed: ', err));
+            navigator.serviceWorker.register('/service-worker.js')
+                .then((registration) => {
+                    console.log('SW registered: ', registration);
+                })
+                .catch((registrationError) => {
+                    console.log('SW registration failed: ', registrationError);
+                });
         });
     }
+
+
+    // Логика для чекбоксов люверсов
+    grommetsCornersCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            grommetsPerimeterCheckbox.disabled = true;
+            grommetsPerimeterCheckbox.checked = false;
+        } else {
+            grommetsPerimeterCheckbox.disabled = false;
+        }
+    });
+
+    calculateBtn.addEventListener('click', calculateCost);
+    exportPdfBtn.addEventListener('click', exportToPdf);
+
+    function calculateCost() {
+        const materialPrice = parseFloat(materialSelect.value);
+        const materialName = materialSelect.options[materialSelect.selectedIndex].getAttribute('data-name');
+        const width = parseFloat(widthInput.value);
+        const height = parseFloat(heightInput.value);
+        const useGrommetsCorners = grommetsCornersCheckbox.checked;
+        const useGrommetsPerimeter = grommetsPerimeterCheckbox.checked && !useGrommetsCorners;
+
+        if (isNaN(materialPrice) || materialPrice <= 0) {
+            resultDiv.textContent = 'Пожалуйста, выберите материал.';
+            resultDiv.style.backgroundColor = '#ffebee';
+            resultDiv.style.color = '#c62828';
+            detailsDiv.style.display = 'none';
+            exportPdfBtn.disabled = true;
+            return;
+        }
+
+        if (isNaN(width) || isNaN(height) || width <= 0 || height <= 0) {
+            resultDiv.textContent = 'Пожалуйста, введите корректные размеры.';
+            resultDiv.style.backgroundColor = '#ffebee';
+            resultDiv.style.color = '#c62828';
+            detailsDiv.style.display = 'none';
+            exportPdfBtn.disabled = true;
+            return;
+        }
+
+        const area = width * height;
+        let materialCost = 0;
+        let layoutCost = 0;
+
+        // Расчет стоимости материала
+        materialCost = area * materialPrice;
+
+        // Расчет стоимости макета
+        if (area <= 1) {
+            layoutCost = 750;
+        } else if (area <= 3) {
+            layoutCost = area * 250;
+        } else if (area <= 5) {
+            layoutCost = area * 200;
+        } else {
+            layoutCost = area * 150;
+        }
+
+        // Расчет стоимости люверсов
+        let grommetsCost = 0;
+        let grommetsCount = 0;
+        if (useGrommetsCorners) {
+            grommetsCost = 100; // Фиксированная стоимость за угловые люверсы
+            grommetsCount = 4; // Предполагаем 4 люверса по углам
+        } else if (useGrommetsPerimeter) {
+            const perimeter = 2 * (width + height);
+            // Количество люверсов = периметр / шаг + 1 (начальный люверс)
+            // Math.ceil для округления вверх, чтобы учесть последний люверс
+            grommetsCount = Math.ceil(perimeter / 0.25);
+            // Цена за люверс из таблицы: 20 руб.
+            grommetsCost = grommetsCount * 20;
+        }
+
+        const totalCost = materialCost + layoutCost + grommetsCost;
+
+        // Отображение результата
+        resultDiv.textContent = `Итоговая стоимость: ${totalCost.toFixed(2)} руб.`;
+        resultDiv.style.backgroundColor = '#e9f7ef';
+        resultDiv.style.color = '#2e7d32';
+        detailsDiv.style.display = 'block';
+        exportPdfBtn.disabled = false;
+
+        // Заполнение таблицы деталей
+        detailsTableBody.innerHTML = ''; // Очистка предыдущих данных
+
+        const rows = [
+            { name: materialName, quantity: area.toFixed(2) + ' м²', price: materialPrice.toFixed(2) + ' руб./м²', amount: materialCost.toFixed(2) + ' руб.' },
+            { name: 'Макет', quantity: '1 шт.', price: '-', amount: layoutCost.toFixed(2) + ' руб.' }
+        ];
+
+        if (useGrommetsCorners || useGrommetsPerimeter) {
+            const grommetsRow = {
+                name: useGrommetsCorners ? 'Люверсы по углам' : 'Люверсы по периметру',
+                quantity: grommetsCount + ' шт.',
+                price: useGrommetsCorners ? '100 руб. (фикс)' : '20 руб./шт.',
+                amount: grommetsCost.toFixed(2) + ' руб.'
+            };
+            rows.push(grommetsRow);
+        }
+
+        rows.forEach(row => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td data-label="Наименование">${row.name}</td>
+                <td data-label="Кол-во">${row.quantity}</td>
+                <td data-label="Цена">${row.price}</td>
+                <td data-label="Сумма">${row.amount}</td>
+            `;
+            detailsTableBody.appendChild(tr);
+        });
+
+        totalAmountSpan.textContent = totalCost.toFixed(2);
+
+        // Сохранение данных для экспорта
+        calculationData = {
+            materialName,
+            width,
+            height,
+            area: area.toFixed(2),
+            useGrommetsCorners,
+            useGrommetsPerimeter,
+            grommetsCount,
+            rows,
+            totalCost: totalCost.toFixed(2)
+        };
+    }
+
+    function exportToPdf() {
+        if (!calculationData || Object.keys(calculationData).length === 0) {
+            alert('Нет данных для экспорта. Сначала выполните расчет.');
+            return;
+        }
+
+        const doc = new jsPDF();
+
+        doc.setFontSize(18);
+        doc.text('Расчет стоимости печати', 105, 20, null, null, 'center');
+
+        doc.setFontSize(12);
+        doc.text(`Материал: ${calculationData.materialName}`, 20, 35);
+        doc.text(`Размеры: ${calculationData.width} м x ${calculationData.height} м`, 20, 45);
+        doc.text(`Площадь: ${calculationData.area} м²`, 20, 55);
+
+        // Использование autotable для таблицы
+        doc.autoTable({
+            startY: 65,
+            head: [['Наименование', 'Кол-во', 'Цена', 'Сумма']],
+            body: calculationData.rows.map(row => [
+                row.name,
+                row.quantity,
+                row.price,
+                row.amount
+            ]),
+            theme: 'grid',
+            styles: {
+                 font: 'helvetica', // Используем стандартный шрифт, поддерживающий кириллицу
+                 // cellWidth: 'wrap' // Позволяет тексту переноситься
+            },
+            headStyles: {
+                fillColor: [76, 175, 80] // Цвет заголовка
+            },
+            margin: { top: 70 }
+        });
+
+        const finalY = doc.lastAutoTable.finalY || 65 + 20; // Получаем Y после таблицы или устанавливаем значение по умолчанию
+
+        doc.setFontSize(16);
+        doc.setTextColor(0, 0, 0); // Черный цвет
+        doc.text(`Итого: ${calculationData.totalCost} руб.`, 20, finalY + 20);
+
+        doc.save('расчет_печати.pdf');
+    }
+
 });
