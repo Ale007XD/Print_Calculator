@@ -166,6 +166,55 @@ footer {
     cursor: pointer;
 }
 
+/* ИЗМЕНЕНО: Стили для скрытого PDF-отчета */
+#pdf-content {
+    /* Прячем элемент за пределами экрана */
+    position: absolute;
+    left: -9999px;
+    top: auto;
+    width: 800px; /* Ширина контента для PDF */
+    background: #fff;
+    padding: 40px;
+    font-family: 'Roboto', sans-serif; /* Используем Google Font */
+    color: #000;
+}
+
+#pdf-content h1 {
+    text-align: center;
+    color: #2c3e50;
+    margin-bottom: 30px;
+    border-bottom: 2px solid #3498db;
+    padding-bottom: 10px;
+}
+
+#pdf-content .pdf-item {
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+#pdf-content h2 {
+    color: #3498db;
+    margin: 0 0 10px 0;
+}
+
+#pdf-content p {
+    margin: 4px 0;
+    font-size: 14px;
+    line-height: 1.6;
+}
+
+#pdf-content .pdf-total {
+    text-align: right;
+    margin-top: 30px;
+}
+
+#pdf-content .pdf-total p {
+    font-size: 22px;
+    font-weight: bold;
+    color: #2c3e50;
+}
 /* Скрываем шаблон */
 #item-template {
     display: none;
